@@ -1,0 +1,4 @@
+﻿Version 1.1
+	Added check for dirty file before implementing save command
+	Forced focus on save prompt of a new file
+	Skipped cleanup when folder DNE

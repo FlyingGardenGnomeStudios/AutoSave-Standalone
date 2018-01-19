@@ -1,0 +1,1 @@
+reg Delete "HKEY_CURRENT_USER\Software\Autodesk\Inventor\Current Version\AutoSave" /v Valid /f
