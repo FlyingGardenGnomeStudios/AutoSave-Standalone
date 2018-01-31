@@ -48,10 +48,10 @@ Partial Class Open_Version
         Me.rbOpenOld.Checked = True
         Me.rbOpenOld.Location = New System.Drawing.Point(13, 222)
         Me.rbOpenOld.Name = "rbOpenOld"
-        Me.rbOpenOld.Size = New System.Drawing.Size(196, 17)
+        Me.rbOpenOld.Size = New System.Drawing.Size(226, 17)
         Me.rbOpenOld.TabIndex = 1
         Me.rbOpenOld.TabStop = True
-        Me.rbOpenOld.Text = "Open old version (Save not allowed)"
+        Me.rbOpenOld.Text = "Open autosave version (Save not allowed)"
         Me.rbOpenOld.UseVisualStyleBackColor = True
         '
         'rbRestore
@@ -59,10 +59,10 @@ Partial Class Open_Version
         Me.rbRestore.AutoSize = True
         Me.rbRestore.Location = New System.Drawing.Point(12, 243)
         Me.rbRestore.Name = "rbRestore"
-        Me.rbRestore.Size = New System.Drawing.Size(201, 17)
+        Me.rbRestore.Size = New System.Drawing.Size(231, 17)
         Me.rbRestore.TabIndex = 2
         Me.rbRestore.TabStop = True
-        Me.rbRestore.Text = "Restore old version to current version"
+        Me.rbRestore.Text = "Restore autosave version to current version"
         Me.rbRestore.UseVisualStyleBackColor = True
         '
         'rbOpenCurrent

@@ -96,7 +96,7 @@ Partial Class Settings
         Me.cmbProjects.Items.AddRange(New Object() {"Current Document", "All Open Documents", "Everything"})
         Me.cmbProjects.Location = New System.Drawing.Point(126, 33)
         Me.cmbProjects.Name = "cmbProjects"
-        Me.cmbProjects.Size = New System.Drawing.Size(152, 21)
+        Me.cmbProjects.Size = New System.Drawing.Size(142, 21)
         Me.cmbProjects.TabIndex = 2
         '
         'cmbTime
@@ -106,7 +106,7 @@ Partial Class Settings
         Me.cmbTime.Items.AddRange(New Object() {"Minutes", "Hours", "Days"})
         Me.cmbTime.Location = New System.Drawing.Point(93, 19)
         Me.cmbTime.Name = "cmbTime"
-        Me.cmbTime.Size = New System.Drawing.Size(67, 21)
+        Me.cmbTime.Size = New System.Drawing.Size(157, 21)
         Me.cmbTime.TabIndex = 4
         '
         'numInt
@@ -286,8 +286,9 @@ Partial Class Settings
         Me.Controls.Add(Me.btnCancel)
         Me.Controls.Add(Me.btnOK)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
+        Me.MaximizeBox = False
         Me.Name = "Settings"
-        Me.Text = "Settings"
+        Me.Text = "Settings - Version 1.3"
         CType(Me.numInt, System.ComponentModel.ISupportInitialize).EndInit()
         Me.gbSaveLoc.ResumeLayout(False)
         Me.gbSaveLoc.PerformLayout()

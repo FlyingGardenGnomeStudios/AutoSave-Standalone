@@ -25,6 +25,7 @@ Namespace AutoSave
         Dim bkgAutoSave As System.Threading.Thread
         Dim _invApp As Inventor.Application
         Dim SkipSave As Boolean
+        Dim IsIdle As Boolean = True
 
 #Region "ApplicationAddInServer Members"
 
@@ -117,11 +118,8 @@ Namespace AutoSave
                 '' Add a button.
                 AutoSave.CommandControls.AddButton(m_AutoSaveButton, True)
             Next
-            Dim Reg As RegistryKey = My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True)
-            If Not Reg Is Nothing Then
-                bkgAutoSave = New System.Threading.Thread(AddressOf runAutoSave)
-                bkgAutoSave.Start(Reg)
-            End If
+            bkgAutoSave = New System.Threading.Thread(AddressOf runAutoSave)
+            bkgAutoSave.Start()
         End Sub
 
         Private Sub m_uiEvents_OnResetRibbonInterface(Context As NameValueMap) Handles m_uiEvents.OnResetRibbonInterface
@@ -162,12 +160,12 @@ Namespace AutoSave
             End Try
 
         End Sub
-        Private Sub runAutoSave(Reg As RegistryKey)
+        Private Sub runAutoSave() 'Reg As RegistryKey)
             Dim InvProcess() As Process = Process.GetProcessesByName("Inventor")
 
             Do While Process.GetProcessesByName("Inventor").Count = 1
-                If Reg.GetValue("AutoSave") = "True" Then
-                    Dim interval As Integer = Reg.GetValue("Interval")
+                If My.Settings.Autosave = True Then
+                    Dim interval As Integer = My.Settings.Interval
                     If interval <> Nothing AndAlso g_inventorApplication.Documents.VisibleDocuments.Count <> 0 Then
                         InvProcess = Process.GetProcessesByName("Inventor")
                         If InvProcess.Count > 1 Then
@@ -181,7 +179,7 @@ Namespace AutoSave
                                 While IsIdle = False
                                     Threading.Thread.Sleep(1000)
                                 End While
-                                SaveFiles(Reg, False)
+                                SaveFiles(False)
                             Catch
                             End Try
                         End If
@@ -190,28 +188,28 @@ Namespace AutoSave
                 Threading.Thread.Sleep(60000)
             Loop
         End Sub
-        Private Sub SaveFiles(Reg As RegistryKey, ByVal Clean As Boolean)
+        Private Sub SaveFiles(ByVal Clean As Boolean)
 
-            Dim Proj As Integer = Reg.GetValue("Projects")
+            Dim Proj As Integer = My.Settings.Projects
             If Clean = True Then
-                Cleanup(g_inventorApplication.ActiveDocument, Reg)
+                Cleanup(g_inventorApplication.ActiveDocument)
             Else
                 Select Case Proj
                     Case 0
-                        DirtyWork(g_inventorApplication.ActiveDocument, Reg)
+                        DirtyWork(g_inventorApplication.ActiveDocument)
                     Case 1
                         For Each Document As Document In g_inventorApplication.Documents.VisibleDocuments
-                            DirtyWork(Document, Reg)
+                            DirtyWork(Document)
                         Next
                     Case 2
                         For Each document In g_inventorApplication.Documents
-                            DirtyWork(document, Reg)
+                            DirtyWork(document)
                         Next
                 End Select
             End If
         End Sub
 
-        Private Sub DirtyWork(oDoc As Inventor.Document, Reg As RegistryKey)
+        Private Sub DirtyWork(oDoc As Inventor.Document)
             Dim Prop As Inventor.Property = Nothing
             If oDoc.Dirty = False Then Exit Sub
             If oDoc.FullFileName = "" Then
@@ -228,7 +226,7 @@ Namespace AutoSave
                 Exit Sub
             End If
             Dim ReadCheck As New IO.FileInfo(oDoc.FullFileName)
-                Dim Read As IO.FileInfo
+            Dim Read As IO.FileInfo
             If ReadCheck.IsReadOnly = False Then
                 Dim SaveName, Tag, Location, Directory As String
                 Try
@@ -244,8 +242,7 @@ Namespace AutoSave
                         Catch
                         End Try
                     End Try
-
-                    If Reg.GetValue("Use Document Location") = "True" Then
+                    If My.Settings.UseDocumentLocation = True Then
                         If Not My.Computer.FileSystem.DirectoryExists(IO.Path.GetDirectoryName(oDoc.FullFileName) & "\AutoSave") Then
                             My.Computer.FileSystem.CreateDirectory(IO.Path.GetDirectoryName(oDoc.FullFileName) & "\AutoSave")
                         End If
@@ -257,7 +254,7 @@ Namespace AutoSave
                         Read = My.Computer.FileSystem.GetFileInfo(SaveName)
                         Read.IsReadOnly = True
                     Else
-                        Location = Reg.GetValue("Save Location")
+                        Location = My.Settings.SaveLocation
                         If Not My.Computer.FileSystem.DirectoryExists(Location) Then
                             My.Computer.FileSystem.CreateDirectory(Location)
                         End If
@@ -268,19 +265,19 @@ Namespace AutoSave
                         Read.IsReadOnly = True
                     End If
                     Directory = IO.Path.GetDirectoryName(SaveName)
-                    If Reg.GetValue("Keep Versions") = "True" Then
+                    If My.Settings.KeepVersions = True Then
                         Dim dir As New DirectoryInfo(Directory)
                         Dim FileList As List(Of FileInfo) = dir.GetFiles("*" & IO.Path.GetFileNameWithoutExtension(oDoc.FullFileName) & "*").ToList
                         FileList.Sort(AddressOf SortByDate)
-                        For X = 0 To FileList.Count - CInt(Reg.GetValue("Save Versions")) - 1
+                        For X = 0 To FileList.Count - CInt(My.Settings.SaveVersions - 1)
                             System.IO.File.SetAttributes(Directory & "\" & FileList.Item(X).ToString, FileAttributes.ReadOnly = False)
                             Kill(Directory & "\" & FileList.Item(X).ToString)
                         Next
-                    ElseIf Reg.GetValue("Keep Older Than") = "True" Then
+                    ElseIf My.Settings.KeepOlderThan = True Then
                         Dim SearchDir As New DirectoryInfo(Directory)
                         For Each file As FileInfo In SearchDir.GetFiles("*")
                             Dim span As TimeSpan = DateTime.Now.Subtract(file.CreationTime)
-                            If span.TotalSeconds > Reg.GetValue("Old Interval") Then
+                            If span.TotalSeconds > My.Settings.OldInterval Then
                                 file.IsReadOnly = False
                                 Kill(file.FullName)
                             End If
@@ -296,11 +293,11 @@ Namespace AutoSave
                     SkipSave = False
                 End Try
             End If
+            oDoc.Dirty = False
         End Sub
-        Private Sub Cleanup(oDoc As Document, Reg As RegistryKey)
+        Private Sub Cleanup(oDoc As Document)
             Dim Location, Savename As String
-
-            If Reg.GetValue("Use Document Location") = "True" Then
+            If My.Settings.UseDocumentLocation = True Then
                 If Not My.Computer.FileSystem.DirectoryExists((IO.Path.GetDirectoryName(oDoc.FullFileName) & "\AutoSave")) Then
                     My.Computer.FileSystem.CreateDirectory((IO.Path.GetDirectoryName(oDoc.FullFileName) & "\AutoSave"))
                 End If
@@ -320,7 +317,7 @@ Namespace AutoSave
                     MessageBox.Show("Unable to clean " & Location & vbNewLine & "Some items will need to be deleted manually")
                 End Try
             Else
-                Location = Reg.GetValue("Save Location")
+                Location = My.Settings.SaveLocation
                 Dim SearchDir As New DirectoryInfo(Location)
                 Try
                     If My.Computer.FileSystem.DirectoryExists(Location) Then
@@ -356,11 +353,8 @@ Namespace AutoSave
             If BeforeOrAfter <> EventTimingEnum.kAfter Then
                 Exit Sub
             End If
-            Dim Reg As RegistryKey = My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True)
-            If Not Reg Is Nothing Then
-                If Reg.GetValue("Cleanup") = "True" And SkipSave = False Then
-                    SaveFiles(Reg, True)
-                End If
+            If My.Settings.Cleanup = True And SkipSave = False Then
+                SaveFiles(True)
             End If
         End Sub
         Private Sub m_AppEvents_OnOpenDocument(DocumentObject As _Document, FullDocumentName As String, BeforeOrAfter As EventTimingEnum, Context As NameValueMap, ByRef HandlingCode As HandlingCodeEnum) Handles m_AppEvents.OnOpenDocument
@@ -378,9 +372,9 @@ Namespace AutoSave
                         Original = Prop.Value
                         OpenVersion.lblOriginal.Text = Original
                         Prop.Delete()
-                        Copy = IO.Path.GetFileName(FullDocumentName)
+                        Copy = IO.Path.GetFileName(oDoc.FullDocumentName)
                         For Each document In g_inventorApplication.Documents
-                            If IO.Path.GetFileName(document.fullfilename) = IO.Path.GetFileName(Original) Then OpenVersion.rbRestore.Enabled = False
+                            If IO.Path.GetFileName(oDoc.FullFileName) = IO.Path.GetFileName(Original) Then OpenVersion.rbRestore.Enabled = False
                             If Not My.Computer.FileSystem.FileExists(Original) Then OpenVersion.rbOpenCurrent.Enabled = False
                         Next
                         If Strings.Len(Original) > 45 Then Original = Strings.Left(Original, 45 - Strings.Len(IO.Path.GetFileName(Original))) & "...\" & IO.Path.GetFileName(Original)
@@ -403,6 +397,7 @@ Namespace AutoSave
         Private Sub m_UIEvents2_OnTerminateCommand(CommandName As String, Context As NameValueMap) Handles m_UIEvents2.OnTerminateCommand
             IsIdle = True
         End Sub
+
     End Class
 #End Region
     Class WebServicesUtils

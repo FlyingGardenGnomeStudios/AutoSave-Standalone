@@ -269,8 +269,8 @@
     </PreBuildEvent>
     <PostBuildEvent>call "%25VS140COMNTOOLS%25vsvars32"
 			mt.exe -manifest "$(ProjectDir)AutoSave.X.manifest" -outputresource:"$(TargetPath)";#2
-		XCopy "$(TargetPath)" "%25AppData%25\Autodesk\ApplicationPlugins\$(TargetName)\" /Y /R
-		XCopy "$(ProjectDir)Autodesk.AutoSave.Inventor.addin" "%25AppData%25\Autodesk\ApplicationPlugins\$(TargetName)\" /Y /R
+		XCopy "$(TargetPath)" "C:\Users\All Users\Autodesk\ApplicationPlugins\FlyingGarden_AutoSave.bundle\Contents" /Y /R
+		XCopy "$(ProjectDir)Autodesk.AutoSave.Inventor.addin" "C:\Users\All Users\Autodesk\ApplicationPlugins\FlyingGarden_AutoSave.bundle\Contents" /Y /R
 	</PostBuildEvent>
   </PropertyGroup>
 </Project>

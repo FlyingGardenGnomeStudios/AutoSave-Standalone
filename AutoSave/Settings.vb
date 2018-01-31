@@ -5,37 +5,22 @@ Imports Microsoft.Win32
 Public Class Settings
     Public Sub New()
         InitializeComponent()
-        Dim Reg As Microsoft.Win32.RegistryKey = My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True)
-        If Reg Is Nothing Then
-            Reg = My.Computer.Registry.CurrentUser.CreateSubKey("Software\Autodesk\Inventor\Current Version\AutoSave")
+        'Dim Reg As Microsoft.Win32.RegistryKey = My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True)
 
-            cmbProjects.SelectedIndex = My.Settings.cmbProj
-            cmbTime.SelectedIndex = My.Settings.cmbInt
-            cmbOlderThan.SelectedIndex = My.Settings.cmbOld
-            numInt.Value = My.Settings.PropertyValues("SaveInt").Property.DefaultValue
-            numVer.Value = My.Settings.PropertyValues("SaveVer").Property.DefaultValue
-            numOld.Value = My.Settings.PropertyValues("SaveOld").Property.DefaultValue
-            chkDocLoc.Checked = My.Settings.PropertyValues("DocLoc").Property.DefaultValue
-            ChkAutoSave.Checked = My.Settings.PropertyValues("AutoSave").Property.DefaultValue
-            rdoVersions.Checked = My.Settings.PropertyValues("KeepVersions").Property.DefaultValue
-            rdoOlderThan.Checked = My.Settings.PropertyValues("KeepOlderThan").Property.DefaultValue
-            rdoKeepEverything.Checked = My.Settings.PropertyValues("Keep Everything").Property.DefaultValue
-            chkClean.Checked = My.Settings.PropertyValues("Cleanup").Property.DefaultValue
-        Else
-            cmbProjects.SelectedIndex = Reg.GetValue("Projects")
-            numInt.Value = Reg.GetValue("Save Interval")
-            cmbTime.SelectedIndex = Reg.GetValue("Interval Type")
-            txtSaveLoc.Text = Reg.GetValue("Save Location")
-            chkDocLoc.Checked = Reg.GetValue("Use Document Location")
-            numVer.Value = Reg.GetValue("Save Versions")
-            cmbOlderThan.SelectedIndex = Reg.GetValue("Old Files")
-            numOld.Value = Reg.GetValue("Save Old")
-            ChkAutoSave.Checked = Reg.GetValue("Autosave")
-            rdoVersions.Checked = Reg.GetValue("Keep Versions")
-            rdoOlderThan.Checked = Reg.GetValue("Keep Older Than")
-            rdoKeepEverything.Checked = Reg.GetValue("Keep Everything")
-            chkClean.Checked = Reg.GetValue("Cleanup")
-        End If
+        cmbProjects.SelectedIndex = My.Settings.Projects
+            numInt.Value = My.Settings.SaveInterval
+            cmbTime.SelectedIndex = My.Settings.IntervalType
+            txtSaveLoc.Text = My.Settings.SaveLocation
+            chkDocLoc.Checked = My.Settings.UseDocumentLocation
+            numVer.Value = My.Settings.SaveVersions
+            cmbOlderThan.SelectedIndex = My.Settings.OldFiles
+            numOld.Value = My.Settings.SaveOld
+            ChkAutoSave.Checked = My.Settings.Autosave
+            rdoVersions.Checked = My.Settings.KeepVersions
+            rdoOlderThan.Checked = My.Settings.KeepOlderThan
+            rdoKeepEverything.Checked = My.Settings.KeepEverything
+            chkClean.Checked = My.Settings.Cleanup
+
 
     End Sub
 
@@ -98,7 +83,6 @@ Public Class Settings
                 MessageBox.Show(ex.Message)
             End Try
         End If
-        Dim Reg As Microsoft.Win32.RegistryKey = My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True)
         Dim Interval As Integer
         Select Case cmbTime.SelectedIndex
             Case 0
@@ -108,15 +92,16 @@ Public Class Settings
             Case 2
                 Interval = numInt.Value * 86400
         End Select
-        Reg.SetValue("Interval", Interval, RegistryValueKind.QWord)
-        Reg.SetValue("Projects", cmbProjects.SelectedIndex, RegistryValueKind.DWord)
-        Reg.SetValue("Save Interval", numInt.Value, RegistryValueKind.DWord)
-        Reg.SetValue("Interval Type", cmbTime.SelectedIndex, RegistryValueKind.DWord)
-        Reg.SetValue("Save Location", txtSaveLoc.Text, RegistryValueKind.String)
-        Reg.SetValue("Use Document Location", chkDocLoc.Checked, RegistryValueKind.String)
-        Reg.SetValue("Save Versions", numVer.Value, RegistryValueKind.DWord)
-        Reg.SetValue("Old Files", cmbOlderThan.SelectedIndex, RegistryValueKind.DWord)
-        Reg.SetValue("Save Old", numOld.Value, RegistryValueKind.DWord)
+        My.Settings.Interval = Interval
+        My.Settings.Projects = cmbProjects.SelectedIndex
+        My.Settings.SaveInterval = numInt.Value
+        My.Settings.IntervalType = cmbTime.SelectedIndex
+        My.Settings.SaveLocation = txtSaveLoc.Text
+        My.Settings.UseDocumentLocation = chkDocLoc.Checked
+        My.Settings.SaveVersions = numVer.Value
+        My.Settings.OldFiles = cmbOlderThan.SelectedIndex
+        My.Settings.SaveOld = numOld.Value
+
         Select Case cmbOlderThan.SelectedIndex
             Case 0
                 Interval = numOld.Value * 60
@@ -125,12 +110,13 @@ Public Class Settings
             Case 2
                 Interval = numOld.Value * 86400
         End Select
-        Reg.SetValue("Old Interval", Interval, RegistryValueKind.DWord)
-        Reg.SetValue("AutoSave", ChkAutoSave.Checked, RegistryValueKind.String)
-        Reg.SetValue("Keep Versions", rdoVersions.Checked, RegistryValueKind.String)
-        Reg.SetValue("Keep Older Than", rdoOlderThan.Checked, RegistryValueKind.String)
-        Reg.SetValue("Keep Everything", rdoKeepEverything.Checked, RegistryValueKind.String)
-        Reg.SetValue("Cleanup", chkClean.Checked, RegistryValueKind.String)
+        My.Settings.OldInterval = Interval
+        My.Settings.Autosave = ChkAutoSave.Checked
+        My.Settings.KeepVersions = rdoVersions.Checked
+        My.Settings.KeepOlderThan = rdoOlderThan.Checked
+        My.Settings.KeepEverything = rdoKeepEverything.Checked
+        My.Settings.Cleanup = chkClean.Checked
+        My.Settings.Save()
         Me.Close()
     End Sub
 
@@ -160,14 +146,14 @@ Public Class Settings
         cmbProjects.SelectedIndex = My.Settings.cmbProj
         cmbTime.SelectedIndex = My.Settings.cmbInt
         cmbOlderThan.SelectedIndex = My.Settings.cmbOld
-        numInt.Value = My.Settings.PropertyValues("SaveInt").Property.DefaultValue
-        numVer.Value = My.Settings.PropertyValues("SaveVer").Property.DefaultValue
+        numInt.Value = My.Settings.PropertyValues("SaveInterval").Property.DefaultValue
+        numVer.Value = My.Settings.PropertyValues("SaveVersions").Property.DefaultValue
         numOld.Value = My.Settings.PropertyValues("SaveOld").Property.DefaultValue
         chkDocLoc.Checked = My.Settings.PropertyValues("DocLoc").Property.DefaultValue
         rdoVersions.Checked = My.Settings.PropertyValues("KeepVersions").Property.DefaultValue
         rdoOlderThan.Checked = My.Settings.PropertyValues("KeepOlderThan").Property.DefaultValue
         chkClean.Checked = My.Settings.PropertyValues("Cleanup").Property.DefaultValue
-        txtSaveLoc.Text = My.Settings.PropertyValues("SaveLoc").Property.DefaultValue
+        txtSaveLoc.Text = My.Settings.PropertyValues("SaveLocation").Property.DefaultValue
         chkDocLoc.Checked = True
     End Sub
 End Class
