@@ -44,6 +44,9 @@ Partial Class Settings
         Me.gbSaveInterval = New System.Windows.Forms.GroupBox()
         Me.chkClean = New System.Windows.Forms.CheckBox()
         Me.ChkAutoSave = New System.Windows.Forms.CheckBox()
+        Me.Button1 = New System.Windows.Forms.Button()
+        Me.txtLog = New System.Windows.Forms.TextBox()
+        Me.chkReadOnlySave = New System.Windows.Forms.CheckBox()
         CType(Me.numInt, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.gbSaveLoc.SuspendLayout()
         CType(Me.numOld, System.ComponentModel.ISupportInitialize).BeginInit()
@@ -53,7 +56,7 @@ Partial Class Settings
         '
         'btnOK
         '
-        Me.btnOK.Location = New System.Drawing.Point(209, 273)
+        Me.btnOK.Location = New System.Drawing.Point(212, 288)
         Me.btnOK.Name = "btnOK"
         Me.btnOK.Size = New System.Drawing.Size(75, 23)
         Me.btnOK.TabIndex = 16
@@ -62,7 +65,7 @@ Partial Class Settings
         '
         'btnCancel
         '
-        Me.btnCancel.Location = New System.Drawing.Point(128, 273)
+        Me.btnCancel.Location = New System.Drawing.Point(131, 288)
         Me.btnCancel.Name = "btnCancel"
         Me.btnCancel.Size = New System.Drawing.Size(75, 23)
         Me.btnCancel.TabIndex = 15
@@ -71,7 +74,7 @@ Partial Class Settings
         '
         'btnDefaults
         '
-        Me.btnDefaults.Location = New System.Drawing.Point(40, 273)
+        Me.btnDefaults.Location = New System.Drawing.Point(43, 288)
         Me.btnDefaults.Name = "btnDefaults"
         Me.btnDefaults.Size = New System.Drawing.Size(82, 23)
         Me.btnDefaults.TabIndex = 14
@@ -139,7 +142,7 @@ Partial Class Settings
         Me.gbSaveLoc.Controls.Add(Me.btnBrowse)
         Me.gbSaveLoc.Controls.Add(Me.txtSaveLoc)
         Me.gbSaveLoc.Enabled = False
-        Me.gbSaveLoc.Location = New System.Drawing.Point(18, 114)
+        Me.gbSaveLoc.Location = New System.Drawing.Point(21, 129)
         Me.gbSaveLoc.Name = "gbSaveLoc"
         Me.gbSaveLoc.Size = New System.Drawing.Size(260, 130)
         Me.gbSaveLoc.TabIndex = 10
@@ -241,7 +244,7 @@ Partial Class Settings
         Me.gbSaveInterval.Controls.Add(Me.cmbTime)
         Me.gbSaveInterval.Controls.Add(Me.numInt)
         Me.gbSaveInterval.Enabled = False
-        Me.gbSaveInterval.Location = New System.Drawing.Point(18, 60)
+        Me.gbSaveInterval.Location = New System.Drawing.Point(21, 75)
         Me.gbSaveInterval.Name = "gbSaveInterval"
         Me.gbSaveInterval.Size = New System.Drawing.Size(260, 48)
         Me.gbSaveInterval.TabIndex = 11
@@ -254,7 +257,7 @@ Partial Class Settings
         Me.chkClean.Checked = True
         Me.chkClean.CheckState = System.Windows.Forms.CheckState.Checked
         Me.chkClean.Enabled = False
-        Me.chkClean.Location = New System.Drawing.Point(18, 250)
+        Me.chkClean.Location = New System.Drawing.Point(21, 265)
         Me.chkClean.Name = "chkClean"
         Me.chkClean.Size = New System.Drawing.Size(206, 17)
         Me.chkClean.TabIndex = 13
@@ -271,11 +274,43 @@ Partial Class Settings
         Me.ChkAutoSave.Text = "Enable AutoSave"
         Me.ChkAutoSave.UseVisualStyleBackColor = True
         '
+        'Button1
+        '
+        Me.Button1.Location = New System.Drawing.Point(16, 288)
+        Me.Button1.Name = "Button1"
+        Me.Button1.Size = New System.Drawing.Size(21, 23)
+        Me.Button1.TabIndex = 17
+        Me.Button1.Text = "V"
+        Me.Button1.UseVisualStyleBackColor = True
+        '
+        'txtLog
+        '
+        Me.txtLog.Location = New System.Drawing.Point(16, 329)
+        Me.txtLog.Multiline = True
+        Me.txtLog.Name = "txtLog"
+        Me.txtLog.ReadOnly = True
+        Me.txtLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical
+        Me.txtLog.Size = New System.Drawing.Size(271, 110)
+        Me.txtLog.TabIndex = 18
+        '
+        'chkReadOnlySave
+        '
+        Me.chkReadOnlySave.AutoSize = True
+        Me.chkReadOnlySave.Location = New System.Drawing.Point(30, 55)
+        Me.chkReadOnlySave.Name = "chkReadOnlySave"
+        Me.chkReadOnlySave.Size = New System.Drawing.Size(162, 17)
+        Me.chkReadOnlySave.TabIndex = 19
+        Me.chkReadOnlySave.Text = "Include read only documents"
+        Me.chkReadOnlySave.UseVisualStyleBackColor = True
+        '
         'Settings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(296, 308)
+        Me.ClientSize = New System.Drawing.Size(296, 322)
+        Me.Controls.Add(Me.chkReadOnlySave)
+        Me.Controls.Add(Me.txtLog)
+        Me.Controls.Add(Me.Button1)
         Me.Controls.Add(Me.ChkAutoSave)
         Me.Controls.Add(Me.chkClean)
         Me.Controls.Add(Me.gbSaveInterval)
@@ -287,8 +322,10 @@ Partial Class Settings
         Me.Controls.Add(Me.btnOK)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.MaximizeBox = False
+        Me.MaximumSize = New System.Drawing.Size(312, 485)
+        Me.MinimumSize = New System.Drawing.Size(312, 360)
         Me.Name = "Settings"
-        Me.Text = "Settings - Version 1.3"
+        Me.Text = "Settings"
         CType(Me.numInt, System.ComponentModel.ISupportInitialize).EndInit()
         Me.gbSaveLoc.ResumeLayout(False)
         Me.gbSaveLoc.PerformLayout()
@@ -322,4 +359,7 @@ Partial Class Settings
     Friend WithEvents chkDocLoc As Windows.Forms.CheckBox
     Friend WithEvents ChkAutoSave As Windows.Forms.CheckBox
     Friend WithEvents rdoKeepEverything As Windows.Forms.RadioButton
+    Friend WithEvents Button1 As Windows.Forms.Button
+    Friend WithEvents txtLog As Windows.Forms.TextBox
+    Friend WithEvents chkReadOnlySave As Windows.Forms.CheckBox
 End Class

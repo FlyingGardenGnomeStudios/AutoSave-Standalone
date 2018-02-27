@@ -8,22 +8,20 @@ Public Class Settings
         'Dim Reg As Microsoft.Win32.RegistryKey = My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True)
 
         cmbProjects.SelectedIndex = My.Settings.Projects
-            numInt.Value = My.Settings.SaveInterval
-            cmbTime.SelectedIndex = My.Settings.IntervalType
-            txtSaveLoc.Text = My.Settings.SaveLocation
-            chkDocLoc.Checked = My.Settings.UseDocumentLocation
-            numVer.Value = My.Settings.SaveVersions
-            cmbOlderThan.SelectedIndex = My.Settings.OldFiles
-            numOld.Value = My.Settings.SaveOld
-            ChkAutoSave.Checked = My.Settings.Autosave
-            rdoVersions.Checked = My.Settings.KeepVersions
-            rdoOlderThan.Checked = My.Settings.KeepOlderThan
-            rdoKeepEverything.Checked = My.Settings.KeepEverything
-            chkClean.Checked = My.Settings.Cleanup
-
-
+        chkReadOnlySave.Checked = My.Settings.ReadOnlySave
+        numInt.Value = My.Settings.SaveInterval
+        cmbTime.SelectedIndex = My.Settings.IntervalType
+        txtSaveLoc.Text = My.Settings.SaveLocation
+        chkDocLoc.Checked = My.Settings.UseDocumentLocation
+        numVer.Value = My.Settings.SaveVersions
+        cmbOlderThan.SelectedIndex = My.Settings.OldFiles
+        numOld.Value = My.Settings.SaveOld
+        ChkAutoSave.Checked = My.Settings.Autosave
+        rdoVersions.Checked = My.Settings.KeepVersions
+        rdoOlderThan.Checked = My.Settings.KeepOlderThan
+        rdoKeepEverything.Checked = My.Settings.KeepEverything
+        chkClean.Checked = My.Settings.Cleanup
     End Sub
-
     Private Sub btnCancel_Click(sender As Object, e As EventArgs) Handles btnCancel.Click
         Me.Close()
     End Sub
@@ -83,6 +81,7 @@ Public Class Settings
                 MessageBox.Show(ex.Message)
             End Try
         End If
+        My.Settings.ReadOnlySave = chkReadOnlySave.Checked
         Dim Interval As Integer
         Select Case cmbTime.SelectedIndex
             Case 0
@@ -146,6 +145,7 @@ Public Class Settings
         cmbProjects.SelectedIndex = My.Settings.cmbProj
         cmbTime.SelectedIndex = My.Settings.cmbInt
         cmbOlderThan.SelectedIndex = My.Settings.cmbOld
+        chkReadOnlySave.Checked = My.Settings.PropertyValues("ReadOnlySave").Property.DefaultValue
         numInt.Value = My.Settings.PropertyValues("SaveInterval").Property.DefaultValue
         numVer.Value = My.Settings.PropertyValues("SaveVersions").Property.DefaultValue
         numOld.Value = My.Settings.PropertyValues("SaveOld").Property.DefaultValue
@@ -155,5 +155,15 @@ Public Class Settings
         chkClean.Checked = My.Settings.PropertyValues("Cleanup").Property.DefaultValue
         txtSaveLoc.Text = My.Settings.PropertyValues("SaveLocation").Property.DefaultValue
         chkDocLoc.Checked = True
+    End Sub
+
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
+        If Button1.Text = "V" Then
+            Me.Height = 485
+            Button1.Text = "Λ"
+        Else
+            Me.Height = 360
+            Button1.Text = "V"
+        End If
     End Sub
 End Class

@@ -10,6 +10,7 @@ Imports System.Text
 Imports RestSharp
 Imports System.Net
 Imports RestSharp.Deserializers
+Imports Scripting
 
 
 Namespace AutoSave
@@ -18,7 +19,6 @@ Namespace AutoSave
     Public Class StandardAddInServer
         Implements Inventor.ApplicationAddInServer
         Dim WithEvents m_UIEvents2 As UserInputEvents
-        Dim WithEvents m_UIEvents3 As InteractionEvents
         Private WithEvents m_uiEvents As UserInterfaceEvents
         Private WithEvents m_AutoSaveButton As ButtonDefinition
         Dim WithEvents m_AppEvents As ApplicationEvents
@@ -26,6 +26,8 @@ Namespace AutoSave
         Dim _invApp As Inventor.Application
         Dim SkipSave As Boolean
         Dim IsIdle As Boolean = True
+        Dim Settings As New Settings
+        Public ReportLog As String
 
 #Region "ApplicationAddInServer Members"
 
@@ -54,7 +56,13 @@ Namespace AutoSave
         Public Sub Deactivate() Implements Inventor.ApplicationAddInServer.Deactivate
             ' TODO:  Add ApplicationAddInServer.Deactivate implementation
             ' Release objects.
+            Try
+                Kill(IO.Path.Combine(My.Computer.FileSystem.SpecialDirectories.Temp, "log.txt"))
+            Catch ex As Exception
+
+            End Try
             m_uiEvents = Nothing
+            m_UIEvents2 = Nothing
             g_inventorApplication = Nothing
             m_AppEvents = Nothing
             GC.Collect()
@@ -76,34 +84,35 @@ Namespace AutoSave
         End Sub
 #End Region
 
-#Region "AppStore Authentication"
-        Private Function Entitlement(ByVal appId As String, ByVal userId As String) As Boolean
-            'REST API call for the entitlement API.
-            'We are using RestSharp for simplicity.
-            'You may choose to use another library.
-            '(1) Build request
-            Dim client = New RestClient
-            client.BaseUrl = New System.Uri("https://apps.exchange.autodesk.com")
-            'Set resource/end point
-            Dim request = New RestRequest
-            request.Resource = "webservices/checkentitlement"
-            request.Method = Method.GET
-            'Add parameters
-            request.AddParameter("userid", userId)
-            request.AddParameter("appid", appId)
-            ' (2) Execute request and get response
-            Dim response As IRestResponse = client.Execute(request)
-            ' (3) Parse the response and get the value of IsValid. 
-            Dim isValid As Boolean = False
-            If (response.StatusCode = HttpStatusCode.OK) Then
-                Dim deserial As JsonDeserializer = New JsonDeserializer
-                Dim entitlementResponse As EntitlementResponse = deserial.Deserialize(Of EntitlementResponse)(response)
-                isValid = entitlementResponse.IsValid
-            End If
+        '#Region "AppStore Authentication"
+        '        Private Function Entitlement(ByVal appId As String, ByVal userId As String) As Boolean
+        '            'REST API call for the entitlement API.
+        '            'We are using RestSharp for simplicity.
+        '            'You may choose to use another library.
+        '            '(1) Build request
+        '            Dim client = New RestClient
+        '            client.BaseUrl = New System.Uri("https://apps.exchange.autodesk.com")
+        '            'Set resource/end point
+        '            Dim request = New RestRequest
+        '            request.Resource = "webservices/checkentitlement"
+        '            request.Method = Method.GET
+        '            'Add parameters
+        '            request.AddParameter("userid", userId)
+        '            request.AddParameter("appid", appId)
+        '            ' (2) Execute request and get response
+        '            Dim response As IRestResponse = client.Execute(request)
+        '            ' (3) Parse the response and get the value of IsValid. 
+        '            Dim isValid As Boolean = False
+        '            If (response.StatusCode = HttpStatusCode.OK) Then
+        '                Dim deserial As JsonDeserializer = New JsonDeserializer
+        '                Dim entitlementResponse As EntitlementResponse = deserial.Deserialize(Of EntitlementResponse)(response)
+        '                isValid = entitlementResponse.IsValid
+        '            End If
 
-            Return isValid
-        End Function
-#End Region
+        '            Return isValid
+        '        End Function
+        '#End Region
+        Private fso As New FileSystemObject
 #Region "User interface definition"
         ' Sub where the user-interface creation is done.  This is called when
         ' the add-in loaded and also if the user interface is reset.
@@ -152,6 +161,13 @@ Namespace AutoSave
                     '    Settings.ShowDialog()
                     'Else
                     '    System.Windows.Forms.MessageBox.Show("License-check fail")
+                    Try
+                        Dim logfile As String() = IO.File.ReadAllLines(IO.Path.Combine(My.Computer.FileSystem.SpecialDirectories.Temp, "log.txt"))
+                        For Each line In logfile
+                            Settings.txtLog.AppendText(line & vbNewLine)
+                        Next
+                    Catch
+                    End Try
                     Settings.ShowDialog()
                     'End If
                 End If
@@ -218,7 +234,9 @@ Namespace AutoSave
                     & vbNewLine & "Do you wish to save it now?", vbYesNo Or MsgBoxStyle.SystemModal, "AutoSave document " & oDoc.DisplayName)
                 If ans = MsgBoxResult.Yes Then
                     Try
+                        g_inventorApplication.Documents.ItemByName(oDoc.FullDocumentName).Activate()
                         g_inventorApplication.ActiveDocument.Save()
+                        Log.Log("Initial save: " & oDoc.DisplayName)
                     Catch
                         Exit Sub
                     End Try
@@ -227,7 +245,7 @@ Namespace AutoSave
             End If
             Dim ReadCheck As New IO.FileInfo(oDoc.FullFileName)
             Dim Read As IO.FileInfo
-            If ReadCheck.IsReadOnly = False Then
+            If ReadCheck.IsReadOnly = False Or My.Settings.ReadOnlySave = True Then
                 Dim SaveName, Tag, Location, Directory As String
                 Try
                     g_inventorApplication.SilentOperation = True
@@ -264,6 +282,7 @@ Namespace AutoSave
                         Read = My.Computer.FileSystem.GetFileInfo(SaveName)
                         Read.IsReadOnly = True
                     End If
+                    Log.Log("Saved document: " & SaveName)
                     Directory = IO.Path.GetDirectoryName(SaveName)
                     If My.Settings.KeepVersions = True Then
                         Dim dir As New DirectoryInfo(Directory)
@@ -272,6 +291,7 @@ Namespace AutoSave
                         For X = 0 To FileList.Count - CInt(My.Settings.SaveVersions - 1)
                             System.IO.File.SetAttributes(Directory & "\" & FileList.Item(X).ToString, FileAttributes.ReadOnly = False)
                             Kill(Directory & "\" & FileList.Item(X).ToString)
+                            Log.Log("Deleted old version: " & Directory & "\" & FileList.Item(X).ToString)
                         Next
                     ElseIf My.Settings.KeepOlderThan = True Then
                         Dim SearchDir As New DirectoryInfo(Directory)
@@ -280,6 +300,7 @@ Namespace AutoSave
                             If span.TotalSeconds > My.Settings.OldInterval Then
                                 file.IsReadOnly = False
                                 Kill(file.FullName)
+                                Log.Log("Deleted old version: " & file.FullName)
                             End If
                         Next
                     End If
@@ -292,8 +313,9 @@ Namespace AutoSave
                     g_inventorApplication.SilentOperation = False
                     SkipSave = False
                 End Try
+                oDoc.Dirty = False
             End If
-            oDoc.Dirty = False
+
         End Sub
         Private Sub Cleanup(oDoc As Document)
             Dim Location, Savename As String
@@ -310,6 +332,7 @@ Namespace AutoSave
                         For Each file As FileInfo In SearchDir.GetFiles(IO.Path.GetFileNameWithoutExtension(oDoc.FullFileName) & ".????" & IO.Path.GetExtension(oDoc.FullFileName).ToString)
                             file.IsReadOnly = False
                             Kill(file.FullName)
+                            Log.Log("Deleted old version: " & file.FullName)
                         Next
                         If Directory.GetFiles(Location, "*.*", SearchOption.AllDirectories).Length = 0 Then Directory.Delete(Location)
                     End If
@@ -324,6 +347,7 @@ Namespace AutoSave
                         For Each file As FileInfo In SearchDir.GetFiles(IO.Path.GetFileNameWithoutExtension(oDoc.FullFileName) & ".????" & IO.Path.GetExtension(oDoc.FullFileName).ToString)
                             file.IsReadOnly = False
                             Kill(file.FullName)
+                            Log.Log("Deleted old version: " & file.FullName)
                         Next
                         If Directory.GetFiles(Location, "*.*", SearchOption.AllDirectories).Length = 0 Then Directory.Delete(Location)
                     End If
@@ -373,9 +397,10 @@ Namespace AutoSave
                         OpenVersion.lblOriginal.Text = Original
                         Prop.Delete()
                         Copy = IO.Path.GetFileName(oDoc.FullDocumentName)
+                        If Not My.Computer.FileSystem.FileExists(Original) Then OpenVersion.rbOpenCurrent.Enabled = False
+                        If My.Computer.FileSystem.GetFileInfo(Original).IsReadOnly = True Then OpenVersion.rbRestore.Enabled = False
                         For Each document In g_inventorApplication.Documents
-                            If IO.Path.GetFileName(oDoc.FullFileName) = IO.Path.GetFileName(Original) Then OpenVersion.rbRestore.Enabled = False
-                            If Not My.Computer.FileSystem.FileExists(Original) Then OpenVersion.rbOpenCurrent.Enabled = False
+                            If IO.Path.GetFileName(document.FullFileName) = IO.Path.GetFileName(Original) Then OpenVersion.rbRestore.Enabled = False
                         Next
                         If Strings.Len(Original) > 45 Then Original = Strings.Left(Original, 45 - Strings.Len(IO.Path.GetFileName(Original))) & "...\" & IO.Path.GetFileName(Original)
                         If Strings.Len(Copy) > 45 Then Copy = Strings.Left(Copy, 45 - Strings.Len(IO.Path.GetFileName(Copy))) & "...\" & IO.Path.GetFileName(Copy)
@@ -400,90 +425,101 @@ Namespace AutoSave
 
     End Class
 #End Region
-    Class WebServicesUtils
+    Public Module Log
+        Public Sub Log(Text As String)
+            Dim fileExists As Boolean = IO.File.Exists(IO.Path.Combine(My.Computer.FileSystem.SpecialDirectories.Temp, "log.txt"))
+            Using sw As New StreamWriter(IO.File.Open(IO.Path.Combine(My.Computer.FileSystem.SpecialDirectories.Temp, "log.txt"), FileMode.Append))
+                sw.WriteLine(
+         IIf(fileExists,
+            DateTime.Now & " " & Text,
+             "Logging started:" & DateTime.Now & vbNewLine & DateTime.Now & " " & Text))
+            End Using
+        End Sub
+    End Module
+    'Class WebServicesUtils
 
-        Private Declare Function AdGetUserId Lib "AdWebServices" Alias "GetUserId" (ByVal userid As StringBuilder, ByVal buffersize As Integer) As Integer
+    '    Private Declare Function AdGetUserId Lib "AdWebServices" Alias "GetUserId" (ByVal userid As StringBuilder, ByVal buffersize As Integer) As Integer
 
-        Private Declare Function AdIsWebServicesInitialized Lib "AdWebServices" Alias "IsWebServicesInitialized" () As Boolean
+    '    Private Declare Function AdIsWebServicesInitialized Lib "AdWebServices" Alias "IsWebServicesInitialized" () As Boolean
 
-        Private Declare Sub AdInitializeWebServices Lib "AdWebServices" Alias "InitializeWebServices" ()
+    '    Private Declare Sub AdInitializeWebServices Lib "AdWebServices" Alias "InitializeWebServices" ()
 
-        Private Declare Function AdIsLoggedIn Lib "AdWebServices" Alias "IsLoggedIn" () As Boolean
+    '    Private Declare Function AdIsLoggedIn Lib "AdWebServices" Alias "IsLoggedIn" () As Boolean
 
-        Private Declare Function AdGetLoginUserName Lib "AdWebServices" Alias "GetLoginUserName" (ByVal username As StringBuilder, ByVal buffersize As Integer) As Integer
+    '    Private Declare Function AdGetLoginUserName Lib "AdWebServices" Alias "GetLoginUserName" (ByVal username As StringBuilder, ByVal buffersize As Integer) As Integer
 
-        Friend Shared Function _GetUserId() As String
-            Dim buffersize As Integer = 128
-            'should be long enough for userid
-            Dim sb As StringBuilder = New StringBuilder(buffersize)
-            Dim len As Integer = WebServicesUtils.AdGetUserId(sb, buffersize)
-            sb.Length = len
-            Return sb.ToString
-        End Function
+    '    Friend Shared Function _GetUserId() As String
+    '        Dim buffersize As Integer = 128
+    '        'should be long enough for userid
+    '        Dim sb As StringBuilder = New StringBuilder(buffersize)
+    '        Dim len As Integer = WebServicesUtils.AdGetUserId(sb, buffersize)
+    '        sb.Length = len
+    '        Return sb.ToString
+    '    End Function
 
-        Friend Shared Function _GetUserName() As String
-            Dim buffersize As Integer = 128
-            'should be long enough for username 
-            Dim sb As StringBuilder = New StringBuilder(buffersize)
-            Dim len As Integer = WebServicesUtils.AdGetLoginUserName(sb, buffersize)
-            sb.Length = len
-            Return sb.ToString
-        End Function
+    '    Friend Shared Function _GetUserName() As String
+    '        Dim buffersize As Integer = 128
+    '        'should be long enough for username 
+    '        Dim sb As StringBuilder = New StringBuilder(buffersize)
+    '        Dim len As Integer = WebServicesUtils.AdGetLoginUserName(sb, buffersize)
+    '        sb.Length = len
+    '        Return sb.ToString
+    '    End Function
 
-        Public Shared Function GetUserId(ByRef userName As String) As String
-            WebServicesUtils.AdInitializeWebServices
-            If Not WebServicesUtils.AdIsWebServicesInitialized Then
-                Throw New Exception("Could not initialize the web services component.")
-            End If
+    '    Public Shared Function GetUserId(ByRef userName As String) As String
+    '        WebServicesUtils.AdInitializeWebServices
+    '        If Not WebServicesUtils.AdIsWebServicesInitialized Then
+    '            Throw New Exception("Could not initialize the web services component.")
+    '        End If
 
-            If Not WebServicesUtils.AdIsLoggedIn Then
-                Throw New Exception("User is not logged in. Please log-in to Autodesk 360")
-            End If
+    '        If Not WebServicesUtils.AdIsLoggedIn Then
+    '            Throw New Exception("User is not logged in. Please log-in to Autodesk 360")
+    '        End If
 
-            Dim userId As String = WebServicesUtils._GetUserId
-            If (userId = "") Then
-                Throw New Exception("Could not get user id. Please log-in to Autodesk 360")
-            End If
+    '        Dim userId As String = WebServicesUtils._GetUserId
+    '        If (userId = "") Then
+    '            Throw New Exception("Could not get user id. Please log-in to Autodesk 360")
+    '        End If
 
-            userName = WebServicesUtils._GetUserName
-            If (userName = "") Then
-                Throw New Exception("Could not get user name. Please log-in to Autodesk 360")
-            End If
+    '        userName = WebServicesUtils._GetUserName
+    '        If (userName = "") Then
+    '            Throw New Exception("Could not get user name. Please log-in to Autodesk 360")
+    '        End If
 
-            Return userId
-        End Function
-    End Class
-    <Serializable()>
-    Public Class EntitlementResponse
+    '        Return userId
+    '    End Function
+    'End Class
+    '    <Serializable()>
+    '    Public Class EntitlementResponse
 
-        Public Property UserId As String
-            Get
-            End Get
-            Set
-            End Set
-        End Property
+    '        Public Property UserId As String
+    '            Get
+    '            End Get
+    '            Set
+    '            End Set
+    '        End Property
 
-        Public Property AppId As String
-            Get
-            End Get
-            Set
-            End Set
-        End Property
+    '        Public Property AppId As String
+    '            Get
+    '            End Get
+    '            Set
+    '            End Set
+    '        End Property
 
-        Public Property IsValid As Boolean
-            Get
-            End Get
-            Set
-            End Set
-        End Property
+    '        Public Property IsValid As Boolean
+    '            Get
+    '            End Get
+    '            Set
+    '            End Set
+    '        End Property
 
-        Public Property Message As String
-            Get
-            End Get
-            Set
-            End Set
-        End Property
-    End Class
+    '        Public Property Message As String
+    '            Get
+    '            End Get
+    '            Set
+    '            End Set
+    '        End Property
+    '    End Class
 End Namespace
 Public Module Globals
     ' Inventor application object.
