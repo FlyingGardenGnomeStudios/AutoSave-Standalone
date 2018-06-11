@@ -127,9 +127,12 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="AddinNETFramework.AdWebServicesUIWrapper">
+      <HintPath>K:\Autodesk\Inventor 2017\Bin\AddinNETFramework.AdWebServicesUIWrapper.dll</HintPath>
+    </Reference>
     <Reference Include="AddinNETFramework.AdWebServicesWrapper, Version=0.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Autodesk\Inventor 2018\Bin\AddinNETFramework.AdWebServicesWrapper.dll</HintPath>
+      <HintPath>K:\Autodesk\Inventor 2017\Bin\AddinNETFramework.AdWebServicesWrapper.dll</HintPath>
     </Reference>
     <Reference Include="autodesk.inventor.interop, Version=22.0.0.0, Culture=neutral, PublicKeyToken=d84147f8b4276564, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
