@@ -28,7 +28,6 @@ Namespace AutoSave
         Dim IsIdle As Boolean = True
         Dim Settings As New Settings
         Public ReportLog As String
-
 #Region "ApplicationAddInServer Members"
 
         ' This method is called by Inventor when it loads the AddIn. The AddInSiteObject provides access  
@@ -83,7 +82,6 @@ Namespace AutoSave
         Public Sub ExecuteCommand(ByVal commandID As Integer) Implements Inventor.ApplicationAddInServer.ExecuteCommand
         End Sub
 #End Region
-
         '#Region "AppStore Authentication"
         '        Private Function Entitlement(ByVal appId As String, ByVal userId As String) As Boolean
         '            'REST API call for the entitlement API.
@@ -108,7 +106,6 @@ Namespace AutoSave
         '                Dim entitlementResponse As EntitlementResponse = deserial.Deserialize(Of EntitlementResponse)(response)
         '                isValid = entitlementResponse.IsValid
         '            End If
-
         '            Return isValid
         '        End Function
         '#End Region
