@@ -88,7 +88,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DefineDebug>true</DefineDebug>
     <DefineTrace>true</DefineTrace>
-    <OutputPath>bin\x64\Debug\</OutputPath>
+    <OutputPath>C:\ProgramData\Autodesk\ApplicationPlugins\FlyingGarden_AutoSave.bundle\Contents\</OutputPath>
     <DocumentationFile>xml.xml</DocumentationFile>
     <NoWarn>42016,42017,42018,42019,42032,42353,42354,42355</NoWarn>
     <DebugType>full</DebugType>

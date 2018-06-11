@@ -195,7 +195,7 @@ Namespace AutoSave
                                 While IsIdle = False
                                     Threading.Thread.Sleep(1000)
                                 End While
-                                SaveFiles(False)
+                                SaveFiles()
                             Catch
                             End Try
                         End If
@@ -204,10 +204,10 @@ Namespace AutoSave
                 Threading.Thread.Sleep(60000)
             Loop
         End Sub
-        Private Sub SaveFiles(ByVal Clean As Boolean)
+        Private Sub SaveFiles()
 
             Dim Proj As Integer = My.Settings.Projects
-            If Clean = True Then
+            If My.Settings.KeepOlderThan = True And My.settings.Cleanup = True Then
                 Cleanup(g_inventorApplication.ActiveDocument)
             Else
                 Select Case Proj
@@ -218,8 +218,8 @@ Namespace AutoSave
                             DirtyWork(Document)
                         Next
                     Case 2
-                        For Each document In g_inventorApplication.Documents
-                            DirtyWork(document)
+                        For Each Document As Document In g_inventorApplication.Documents
+                            DirtyWork(Document)
                         Next
                 End Select
             End If
@@ -227,17 +227,33 @@ Namespace AutoSave
 
         Private Sub DirtyWork(oDoc As Inventor.Document)
             Dim Prop As Inventor.Property = Nothing
-            If oDoc.Dirty = False Then Exit Sub
+            If oDoc.Dirty = False Then
+                Log.Log(oDoc.DisplayName & " Skipped save - No changes since last save")
+                Exit Sub
+            End If
+            If oDoc.DocumentType = DocumentTypeEnum.kAssemblyDocumentObject Then
+                Dim oAssDoc As AssemblyDocument = oDoc
+                If Not oAssDoc.ComponentDefinition.ActiveOccurrence Is Nothing Then
+                    Log.Log("Skipped saving " & oAssDoc.DisplayName & vbNewLine & "Currently being edited by user.")
+                    Exit Sub
+                End If
+            Else
+                If Not oDoc.ActivatedObject Is Nothing Then
+                    Log.Log("Skipped saving " & oDoc.DisplayName & vbNewLine & "Currently being edited by user.")
+                    Exit Sub
+                End If
+
+            End If
             If oDoc.FullFileName = "" Then
                 Dim ans As MsgBoxResult
                 ans = MsgBox("The document " & oDoc.DisplayName & " has not yet been saved." _
                     & vbNewLine & "Do you wish to save it now?", vbYesNo Or MsgBoxStyle.SystemModal, "AutoSave document " & oDoc.DisplayName)
                 If ans = MsgBoxResult.Yes Then
                     Try
-                        g_inventorApplication.Documents.ItemByName(oDoc.FullDocumentName).Activate()
-                        g_inventorApplication.ActiveDocument.Save()
+                        oDoc.Save()
                         Log.Log("Initial save: " & oDoc.DisplayName)
                     Catch
+                        Log.Log("Skipped initial save of " & oDoc.DisplayName)
                         Exit Sub
                     End Try
                 End If
@@ -256,8 +272,10 @@ Namespace AutoSave
                         Prop = customPropSet.Add(oDoc.FullDocumentName, "Original")
                     Catch
                         Try
+                            Prop = customPropSet.Item("Original")
                             Prop.Value = oDoc.FullDocumentName
-                        Catch
+                        Catch ex As Exception
+                            ' MessageBox.Show("Error encountered while saving " & oDoc.DisplayName & vbNewLine & ex.Message)
                         End Try
                     End Try
                     If My.Settings.UseDocumentLocation = True Then
@@ -268,9 +286,13 @@ Namespace AutoSave
                         SaveName = Location.Insert(InStrRev(oDoc.FullFileName, "\"), "Autosave\")
                         Tag = GetTag(oDoc, IO.Path.GetDirectoryName(SaveName))
                         SaveName = SaveName.Insert(InStrRev(SaveName, "."), Tag & ".")
-                        oDoc.SaveAs(SaveName, True)
-                        Read = My.Computer.FileSystem.GetFileInfo(SaveName)
-                        Read.IsReadOnly = True
+                        Try
+                            oDoc.SaveAs(SaveName, True)
+                            Read = My.Computer.FileSystem.GetFileInfo(SaveName)
+                            Read.IsReadOnly = True
+                        Catch ex As Exception
+                            ' MessageBox.Show("Error encountered while saving " & oDoc.DisplayName & vbNewLine & ex.Message)
+                        End Try
                     Else
                         Location = My.Settings.SaveLocation
                         If Not My.Computer.FileSystem.DirectoryExists(Location) Then
@@ -278,17 +300,23 @@ Namespace AutoSave
                         End If
                         Tag = GetTag(oDoc, Location)
                         SaveName = Location & IO.Path.GetFileName(oDoc.FullFileName).Insert(InStrRev(IO.Path.GetFileName(oDoc.FullFileName), "."), Tag & ".")
-                        oDoc.SaveAs(SaveName, True)
-                        Read = My.Computer.FileSystem.GetFileInfo(SaveName)
-                        Read.IsReadOnly = True
+                        Try
+                            oDoc.SaveAs(SaveName, True)
+                            Read = My.Computer.FileSystem.GetFileInfo(SaveName)
+                            Read.IsReadOnly = True
+                        Catch ex As Exception
+                            'MessageBox.Show("Error encountered while saving " & oDoc.DisplayName & vbNewLine & ex.Message)
+                            Log.Log("Error encountered while saving " & oDoc.DisplayName & vbNewLine & ex.Message)
+                        End Try
+
                     End If
                     Log.Log("Saved document: " & SaveName)
                     Directory = IO.Path.GetDirectoryName(SaveName)
                     If My.Settings.KeepVersions = True Then
                         Dim dir As New DirectoryInfo(Directory)
-                        Dim FileList As List(Of FileInfo) = dir.GetFiles("*" & IO.Path.GetFileNameWithoutExtension(oDoc.FullFileName) & "*").ToList
+                        Dim FileList As List(Of FileInfo) = dir.GetFiles(IO.Path.GetFileNameWithoutExtension(oDoc.FullFileName) & ".????" & IO.Path.GetExtension(oDoc.FullFileName)).ToList
                         FileList.Sort(AddressOf SortByDate)
-                        For X = 0 To FileList.Count - CInt(My.Settings.SaveVersions - 1)
+                        For X = 0 To FileList.Count - CInt(My.Settings.SaveVersions) - 1
                             System.IO.File.SetAttributes(Directory & "\" & FileList.Item(X).ToString, FileAttributes.ReadOnly = False)
                             Kill(Directory & "\" & FileList.Item(X).ToString)
                             Log.Log("Deleted old version: " & Directory & "\" & FileList.Item(X).ToString)
@@ -305,6 +333,8 @@ Namespace AutoSave
                         Next
                     End If
                 Catch ex As Exception
+                    'MessageBox.Show("An error ocurred while saving: " & oDoc.DisplayName & vbNewLine & ex.Message)
+                    Log.Log("Error encountered while saving: " & ex.Message)
                 Finally
                     Try
                         Prop.Delete()
@@ -314,6 +344,8 @@ Namespace AutoSave
                     SkipSave = False
                 End Try
                 oDoc.Dirty = False
+            ElseIf ReadCheck.IsReadOnly = True Then
+                Log.Log(oDoc.DisplayName & " Not saved - Read only - User parameter")
             End If
 
         End Sub
@@ -337,7 +369,7 @@ Namespace AutoSave
                         If Directory.GetFiles(Location, "*.*", SearchOption.AllDirectories).Length = 0 Then Directory.Delete(Location)
                     End If
                 Catch ex As Exception
-                    MessageBox.Show("Unable to clean " & Location & vbNewLine & "Some items will need to be deleted manually")
+                    MessageBox.Show("Unable to clean " & Location & vbNewLine & ". Some items will need to be deleted manually")
                 End Try
             Else
                 Location = My.Settings.SaveLocation
@@ -355,7 +387,6 @@ Namespace AutoSave
                     MessageBox.Show("Unable to clean " & Location & vbNewLine & "Some items will need to be deleted manually" & vbNewLine & vbNewLine & ex.ToString)
                 End Try
             End If
-
         End Sub
         Function GetTag(ByRef oDoc As Inventor.Document, ByRef Location As String) As String
             Dim dir As New DirectoryInfo(Location)
@@ -378,25 +409,25 @@ Namespace AutoSave
                 Exit Sub
             End If
             If My.Settings.Cleanup = True And SkipSave = False Then
-                SaveFiles(True)
+                Cleanup(DocumentObject)
             End If
         End Sub
         Private Sub m_AppEvents_OnOpenDocument(DocumentObject As _Document, FullDocumentName As String, BeforeOrAfter As EventTimingEnum, Context As NameValueMap, ByRef HandlingCode As HandlingCodeEnum) Handles m_AppEvents.OnOpenDocument
             Dim OpenVersion As New Open_Version
             If BeforeOrAfter = EventTimingEnum.kAfter Then
                 Dim oDoc As Document = g_inventorApplication.ActiveDocument
-                Dim Read As IO.FileInfo = My.Computer.FileSystem.GetFileInfo(oDoc.FullFileName)
+                Dim Read As IO.FileInfo = My.Computer.FileSystem.GetFileInfo(DocumentObject.FullFileName)
                 If Read.IsReadOnly = True Then
                     Dim Copy, Original As String
                     Try
-                        Dim customPropSet As Inventor.PropertySet = oDoc.PropertySets.Item("Inventor User Defined Properties")
+                        Dim customPropSet As Inventor.PropertySet = DocumentObject.PropertySets.Item("Inventor User Defined Properties")
                         Dim Prop As Inventor.Property = customPropSet.Item("Original")
                         If customPropSet.Item("Original").Value = "" Then Exit Sub
                         g_inventorApplication.SilentOperation = True
                         Original = Prop.Value
                         OpenVersion.lblOriginal.Text = Original
                         Prop.Delete()
-                        Copy = IO.Path.GetFileName(oDoc.FullDocumentName)
+                        Copy = IO.Path.GetFileName(DocumentObject.FullFileName)
                         If Not My.Computer.FileSystem.FileExists(Original) Then OpenVersion.rbOpenCurrent.Enabled = False
                         If My.Computer.FileSystem.GetFileInfo(Original).IsReadOnly = True Then OpenVersion.rbRestore.Enabled = False
                         For Each document In g_inventorApplication.Documents
