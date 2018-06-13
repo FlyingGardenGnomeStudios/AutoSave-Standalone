@@ -234,12 +234,11 @@ Namespace AutoSave
                     Log.Log("Skipped saving " & oAssDoc.DisplayName & vbNewLine & "Currently being edited by user.")
                     Exit Sub
                 End If
-            Else
+            ElseIf oDoc.DocumentType = DocumentTypeEnum.kPartDocumentObject Then
                 If Not oDoc.ActivatedObject Is Nothing Then
                     Log.Log("Skipped saving " & oDoc.DisplayName & vbNewLine & "Currently being edited by user.")
                     Exit Sub
                 End If
-
             End If
             If oDoc.FullFileName = "" Then
                 Dim ans As MsgBoxResult

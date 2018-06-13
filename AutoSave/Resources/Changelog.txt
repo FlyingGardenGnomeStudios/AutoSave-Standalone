@@ -1,19 +1,21 @@
-﻿Version 1.1
-	Added check for dirty file before implementing save command
-	Forced focus on save prompt of a new file
-	Skipped cleanup when folder DNE
-Version 1.2
-	Changed installer as some anti-virus programs were reporting a false positive
-	Moved saved settings from registry to roaming folder
-Version 1.3
-	Fixed bug where Inventor would crash when cancelling an open saved version command
-	Added log file
-	Added redundancies in restore method
-Version 1.4
-	Fixed issue where unsaved non-active parts were missed in save command
-	Fixed error opening assemblies with saved LOD
-	Fixed old drawings not cleaning up correctly
+﻿Version 1.5.1
+	Fixed bug which skipped saving active drawing documents
 Version 1.5
 	Some backups incorrectly deleting during Inventor load
 	Fixed saved versions not retaining correct number of backups
 	Fixed issue where cleanup checkbox would become unchecked during certain operations
+Version 1.4
+	Fixed issue where unsaved non-active parts were missed in save command
+	Fixed error opening assemblies with saved LOD
+	Fixed old drawings not cleaning up correctly
+Version 1.3
+	Fixed bug where Inventor would crash when cancelling an open saved version command
+	Added log file
+	Added redundancies in restore method
+Version 1.2
+	Changed installer as some anti-virus programs were reporting a false positive
+	Moved saved settings from registry to roaming folder
+Version 1.1
+	Added check for dirty file before implementing save command
+	Forced focus on save prompt of a new file
+	Skipped cleanup when folder DNE
