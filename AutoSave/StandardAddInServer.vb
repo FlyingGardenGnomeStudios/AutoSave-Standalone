@@ -284,8 +284,10 @@ Namespace AutoSave
                         SaveName = SaveName.Insert(InStrRev(SaveName, "."), Tag & ".")
                         Try
                             oDoc.SaveAs(SaveName, True)
+                            oDoc.PropertySets.Item("{32853F0F-3444-11D1-9E93-0060B03C1CA6}").ItemByPropId("5").Value = oDoc.DisplayName
                             Read = My.Computer.FileSystem.GetFileInfo(SaveName)
                             Read.IsReadOnly = True
+
                         Catch ex As Exception
                             ' MessageBox.Show("Error encountered while saving " & oDoc.DisplayName & vbNewLine & ex.Message)
                         End Try

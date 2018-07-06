@@ -1,4 +1,6 @@
-﻿Version 1.5.1
+﻿Version 1.5.2
+	Forced update of "Part Name" iProperty after autosave. Some people were having the autosave part number display on their active drawing.
+Version 1.5.1
 	Fixed bug which skipped saving active drawing documents
 Version 1.5
 	Some backups incorrectly deleting during Inventor load
