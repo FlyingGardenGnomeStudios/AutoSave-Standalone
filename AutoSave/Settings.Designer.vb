@@ -47,6 +47,7 @@ Partial Class Settings
         Me.Button1 = New System.Windows.Forms.Button()
         Me.txtLog = New System.Windows.Forms.TextBox()
         Me.chkReadOnlySave = New System.Windows.Forms.CheckBox()
+        Me.btnClear = New System.Windows.Forms.Button()
         CType(Me.numInt, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.gbSaveLoc.SuspendLayout()
         CType(Me.numOld, System.ComponentModel.ISupportInitialize).BeginInit()
@@ -303,11 +304,21 @@ Partial Class Settings
         Me.chkReadOnlySave.Text = "Include read only documents"
         Me.chkReadOnlySave.UseVisualStyleBackColor = True
         '
+        'btnClear
+        '
+        Me.btnClear.Location = New System.Drawing.Point(212, 445)
+        Me.btnClear.Name = "btnClear"
+        Me.btnClear.Size = New System.Drawing.Size(75, 23)
+        Me.btnClear.TabIndex = 20
+        Me.btnClear.Text = "Clear"
+        Me.btnClear.UseVisualStyleBackColor = True
+        '
         'Settings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(296, 322)
+        Me.Controls.Add(Me.btnClear)
         Me.Controls.Add(Me.chkReadOnlySave)
         Me.Controls.Add(Me.txtLog)
         Me.Controls.Add(Me.Button1)
@@ -322,7 +333,7 @@ Partial Class Settings
         Me.Controls.Add(Me.btnOK)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.MaximizeBox = False
-        Me.MaximumSize = New System.Drawing.Size(312, 485)
+        Me.MaximumSize = New System.Drawing.Size(312, 510)
         Me.MinimumSize = New System.Drawing.Size(312, 360)
         Me.Name = "Settings"
         Me.Text = "Settings"
@@ -362,4 +373,5 @@ Partial Class Settings
     Friend WithEvents Button1 As Windows.Forms.Button
     Friend WithEvents txtLog As Windows.Forms.TextBox
     Friend WithEvents chkReadOnlySave As Windows.Forms.CheckBox
+    Friend WithEvents btnClear As Windows.Forms.Button
 End Class

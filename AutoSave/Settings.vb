@@ -1,4 +1,5 @@
 ﻿
+Imports System.IO
 Imports System.Windows.Forms
 Imports Microsoft.Win32
 
@@ -159,11 +160,23 @@ Public Class Settings
 
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
         If Button1.Text = "V" Then
-            Me.Height = 485
+            Me.Height = 510
             Button1.Text = "Λ"
         Else
             Me.Height = 360
             Button1.Text = "V"
         End If
+    End Sub
+
+    Private Sub btnClear_Click(sender As Object, e As EventArgs) Handles btnClear.Click
+        txtLog.Clear()
+        Dim fileExists As Boolean = IO.File.Exists(IO.Path.Combine(My.Computer.FileSystem.SpecialDirectories.Temp, "log.txt"))
+        If fileExists = True Then
+            Kill(Path.Combine(My.Computer.FileSystem.SpecialDirectories.Temp, "log.txt"))
+        End If
+        Using sw As New StreamWriter(IO.File.Open(IO.Path.Combine(My.Computer.FileSystem.SpecialDirectories.Temp, "log.txt"), FileMode.Append))
+            sw.WriteLine("Log reset:" & DateTime.Now)
+        End Using
+        txtLog.Text = "Log reset:" & DateTime.Now
     End Sub
 End Class
