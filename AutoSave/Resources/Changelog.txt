@@ -1,4 +1,6 @@
-﻿Version 1.5.2
+﻿Version 1.6
+	Corrected subscription issues - instituted 15 day grace period
+Version 1.5.2
 	Forced update of "Part Name" iProperty after autosave. Some people were having the autosave part number display on their active drawing.
 	Added log reset button
 Version 1.5.1

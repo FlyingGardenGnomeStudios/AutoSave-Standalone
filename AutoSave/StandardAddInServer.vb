@@ -13,6 +13,7 @@ Imports RestSharp.Deserializers
 Imports Scripting
 
 
+
 Namespace AutoSave
     <ProgIdAttribute("AutoSave.StandardAddInServer"),
     GuidAttribute("e3bdfb3b-6cc6-45cc-a0cf-90eeea53f9e2")>
@@ -28,6 +29,8 @@ Namespace AutoSave
         Dim IsIdle As Boolean = True
         Dim Settings As New Settings
         Public ReportLog As String
+        Dim Fail As Boolean = True
+
 #Region "ApplicationAddInServer Members"
 
         ' This method is called by Inventor when it loads the AddIn. The AddInSiteObject provides access  
@@ -42,6 +45,7 @@ Namespace AutoSave
             Dim largeIcon As stdole.IPictureDisp = PictureDispConverter.ToIPictureDisp(My.Resources.AutoSave_32)
             Dim smallIcon As stdole.IPictureDisp = PictureDispConverter.ToIPictureDisp(My.Resources.AutoSave_16)
             Dim controlDefs As Inventor.ControlDefinitions = g_inventorApplication.CommandManager.ControlDefinitions
+            ActivationCheck()
             m_AutoSaveButton = controlDefs.AddButtonDefinition("Settings", "UIAutoSave", CommandTypesEnum.kShapeEditCmdType, AddInClientID,, "Change options for AutoSave", smallIcon, largeIcon, ButtonDisplayEnum.kDisplayTextInLearningMode)
             m_AppEvents = g_inventorApplication.ApplicationEvents
             ' Add to the user interface, if it's the first time.
@@ -82,34 +86,90 @@ Namespace AutoSave
         Public Sub ExecuteCommand(ByVal commandID As Integer) Implements Inventor.ApplicationAddInServer.ExecuteCommand
         End Sub
 #End Region
-        '#Region "AppStore Authentication"
-        '        Private Function Entitlement(ByVal appId As String, ByVal userId As String) As Boolean
-        '            'REST API call for the entitlement API.
-        '            'We are using RestSharp for simplicity.
-        '            'You may choose to use another library.
-        '            '(1) Build request
-        '            Dim client = New RestClient
-        '            client.BaseUrl = New System.Uri("https://apps.exchange.autodesk.com")
-        '            'Set resource/end point
-        '            Dim request = New RestRequest
-        '            request.Resource = "webservices/checkentitlement"
-        '            request.Method = Method.GET
-        '            'Add parameters
-        '            request.AddParameter("userid", userId)
-        '            request.AddParameter("appid", appId)
-        '            ' (2) Execute request and get response
-        '            Dim response As IRestResponse = client.Execute(request)
-        '            ' (3) Parse the response and get the value of IsValid. 
-        '            Dim isValid As Boolean = False
-        '            If (response.StatusCode = HttpStatusCode.OK) Then
-        '                Dim deserial As JsonDeserializer = New JsonDeserializer
-        '                Dim entitlementResponse As EntitlementResponse = deserial.Deserialize(Of EntitlementResponse)(response)
-        '                isValid = entitlementResponse.IsValid
-        '            End If
-        '            Return isValid
-        '        End Function
-        '#End Region
+#Region "AppStore Authentication"
+        Private Sub ActivationCheck()
+            Dim mgr As CWebServicesManager = New CWebServicesManager
+            Dim isInitialize As Boolean = mgr.Initialize
+            If (isInitialize = True) Then
+                Dim userId As String = ""
+                mgr.GetUserId(userId)
+                Dim username As String = ""
+                mgr.GetLoginUserName(username)
+                'replace your App id here...
+                'contact appsubmissions@autodesk.com for the App Id
+                Dim appId As String = "3908021420381157341"
+                Dim isValid As Boolean = Entitlement(appId, userId)
+                Dim Reg As RegistryKey = My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True)
+                ' Get the auth token. 
+                If Reg Is Nothing Then
+                    My.Computer.Registry.CurrentUser.CreateSubKey("Software\Autodesk\Inventor\Current Version\AutoSave")
+                    Reg = My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True)
+                    Reg.SetValue("Arb1", "") ' date
+                    Reg.SetValue("Arb2", userId, RegistryValueKind.String) 'UserID
+                    Reg.SetValue("Arb3", appId, RegistryValueKind.String) ' Appid
+                End If
+                Dim Settings As New Settings
+                If isValid = True Then
+                    Try
+                        Dim uTime As Integer
+                        uTime = (DateTime.UtcNow.AddDays(15) - New DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds
+                        Reg.SetValue("Arb1", uTime)
+                        Fail = False
+                    Catch ex As Exception
+
+                    End Try
+
+                ElseIf isvalid = False Then
+                    Dim FDay As DateTime = ConvertFromUnixTimestamp(Reg.GetValue("Arb1"))
+                    If userId = Reg.GetValue("Arb2") AndAlso
+                       appId = Reg.GetValue("Arb3") AndAlso
+                      DateTime.Today < FDay Then
+                        Dim days As Integer = FDay.Subtract(Today).Days
+                        MessageBox.Show("License-check failed" & vbNewLine &
+                                        "Confirm you have access to the internet and retry." & vbNewLine &
+                                        "The app is currently functioning in a grace period." & vbNewLine &
+                                        "There are currently " & days & " days remaining.", "AutoSave Add-in")
+                        Fail = False
+                    Else
+                        MessageBox.Show("AutoSave license-check fail" & vbNewLine &
+                                        "Please purchase the add-in from the appstore.", "AutoSave Add-in")
+                        Fail = True
+                    End If
+                End If
+            End If
+        End Sub
+        Private Shared Function ConvertFromUnixTimestamp(ByVal timestamp As Long) As DateTime
+            Dim origin As DateTime = New DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+            Return origin.AddSeconds(timestamp)
+        End Function
+        Private Function Entitlement(ByVal appId As String, ByVal userId As String) As Boolean
+            'REST API call for the entitlement API.
+            'We are using RestSharp for simplicity.
+            'You may choose to use another library.
+            '(1) Build request
+            Dim client = New RestClient
+            client.BaseUrl = New System.Uri("https://apps.exchange.autodesk.com")
+            'Set resource/end point
+            Dim request = New RestRequest
+            request.Resource = "webservices/checkentitlement"
+            request.Method = Method.GET
+            'Add parameters
+            request.AddParameter("userid", userId)
+            request.AddParameter("appid", appId)
+            ' (2) Execute request and get response
+            Dim response As IRestResponse = client.Execute(request)
+            ' (3) Parse the response and get the value of IsValid. 
+            Dim isValid As Boolean = False
+            If (response.StatusCode = HttpStatusCode.OK) Then
+                Dim deserial As JsonDeserializer = New JsonDeserializer
+                Dim entitlementResponse As EntitlementResponse = deserial.Deserialize(Of EntitlementResponse)(response)
+                isValid = entitlementResponse.IsValid
+            End If
+            Return isValid
+        End Function
+#End Region
         Private fso As New FileSystemObject
+
 #Region "User interface definition"
         ' Sub where the user-interface creation is done.  This is called when
         ' the add-in loaded and also if the user interface is reset.
@@ -134,43 +194,41 @@ Namespace AutoSave
         End Sub
         ' Sample handler for the button.
         Private Sub m_AutoSaveButton_OnExecute(Context As NameValueMap) Handles m_AutoSaveButton.OnExecute
-            Try
-                'string userName;
-                'string userId = WebServicesUtils.GetUserId(out userName);
-                Dim mgr As CWebServicesManager = New CWebServicesManager
-                Dim isInitialize As Boolean = mgr.Initialize
-                If (isInitialize = True) Then
-                    'Dim userId As String = ""
-                    'mgr.GetUserId(userId)
-                    'Dim username As String = ""
-                    'mgr.GetLoginUserName(username)
-                    ''replace your App id here...
-                    ''contact appsubmissions@autodesk.com for the App Id
-                    'Dim appId As String = "3908021420381157341"
-                    'Dim isValid As Boolean = Entitlement(appId, userId)
-                    '' Get the auth token. 
-                    'Dim Reg As RegistryKey = My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True)
-                    Dim Settings As New Settings
-                    'If isValid Then
-                    '    Settings.ShowDialog()
-                    'ElseIf Reg.GetValue("Valid") = True Then
-                    '    System.Windows.Forms.MessageBox.Show("License-check bypassed by registry values")
-                    '    Settings.ShowDialog()
-                    'Else
-                    '    System.Windows.Forms.MessageBox.Show("License-check fail")
-                    Try
-                        Dim logfile As String() = IO.File.ReadAllLines(IO.Path.Combine(My.Computer.FileSystem.SpecialDirectories.Temp, "log.txt"))
-                        For Each line In logfile
-                            Settings.txtLog.AppendText(line & vbNewLine)
-                        Next
-                    Catch
-                    End Try
-                    Settings.ShowDialog()
-                    'End If
-                End If
-            Catch ex As Exception
-                System.Windows.Forms.MessageBox.Show(ex.Message)
-            End Try
+            'Try
+            '    Dim mgr As CWebServicesManager = New CWebServicesManager
+            '    Dim isInitialize As Boolean = mgr.Initialize
+            '    If (isInitialize = True) Then
+            '        Dim userId As String = ""
+            '        mgr.GetUserId(userId)
+            '        Dim username As String = ""
+            '        mgr.GetLoginUserName(username)
+            '        'replace your App id here...
+            '        'contact appsubmissions@autodesk.com for the App Id
+            '        Dim appId As String = "3908021420381157341"
+            '        Dim isValid As Boolean = Entitlement(appId, userId)
+            '        ' Get the auth token. 
+            '        Dim Reg As RegistryKey = My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True)
+            '        Dim Settings As New Settings
+            '        If isValid Then
+            '            Settings.ShowDialog()
+            '        ElseIf Reg.GetValue("Valid") = True Then
+            '            System.Windows.Forms.MessageBox.Show("License-check bypassed by registry values")
+            '            'Settings.ShowDialog()
+            '        Else
+            '            System.Windows.Forms.MessageBox.Show("AutoSave license-check fail" & vbNewLine &
+            '                                                 "Please purchase the add-in from the appstore.")
+            If Fail = False Then
+                Settings.ShowDialog()
+            Else
+                MessageBox.Show("AutoSave license-check fail" & vbNewLine &
+                                "Please purchase the add-in from the appstore.", "AutoSave Add-in")
+            End If
+
+            '        End If
+            '    End If
+            'Catch ex As Exception
+            '    System.Windows.Forms.MessageBox.Show(ex.Message)
+            'End Try
 
         End Sub
         Private Sub runAutoSave() 'Reg As RegistryKey)
@@ -465,90 +523,72 @@ Namespace AutoSave
             End Using
         End Sub
     End Module
-    'Class WebServicesUtils
+    Class WebServicesUtils
 
-    '    Private Declare Function AdGetUserId Lib "AdWebServices" Alias "GetUserId" (ByVal userid As StringBuilder, ByVal buffersize As Integer) As Integer
+        Private Declare Function AdGetUserId Lib "AdWebServices" Alias "GetUserId" (ByVal userid As StringBuilder, ByVal buffersize As Integer) As Integer
 
-    '    Private Declare Function AdIsWebServicesInitialized Lib "AdWebServices" Alias "IsWebServicesInitialized" () As Boolean
+        Private Declare Function AdIsWebServicesInitialized Lib "AdWebServices" Alias "IsWebServicesInitialized" () As Boolean
 
-    '    Private Declare Sub AdInitializeWebServices Lib "AdWebServices" Alias "InitializeWebServices" ()
+        Private Declare Sub AdInitializeWebServices Lib "AdWebServices" Alias "InitializeWebServices" ()
 
-    '    Private Declare Function AdIsLoggedIn Lib "AdWebServices" Alias "IsLoggedIn" () As Boolean
+        Private Declare Function AdIsLoggedIn Lib "AdWebServices" Alias "IsLoggedIn" () As Boolean
 
-    '    Private Declare Function AdGetLoginUserName Lib "AdWebServices" Alias "GetLoginUserName" (ByVal username As StringBuilder, ByVal buffersize As Integer) As Integer
+        Private Declare Function AdGetLoginUserName Lib "AdWebServices" Alias "GetLoginUserName" (ByVal username As StringBuilder, ByVal buffersize As Integer) As Integer
 
-    '    Friend Shared Function _GetUserId() As String
-    '        Dim buffersize As Integer = 128
-    '        'should be long enough for userid
-    '        Dim sb As StringBuilder = New StringBuilder(buffersize)
-    '        Dim len As Integer = WebServicesUtils.AdGetUserId(sb, buffersize)
-    '        sb.Length = len
-    '        Return sb.ToString
-    '    End Function
+        Friend Shared Function _GetUserId() As String
+            Dim buffersize As Integer = 128
+            'should be long enough for userid
+            Dim sb As StringBuilder = New StringBuilder(buffersize)
+            Dim len As Integer = WebServicesUtils.AdGetUserId(sb, buffersize)
+            sb.Length = len
+            Return sb.ToString
+        End Function
 
-    '    Friend Shared Function _GetUserName() As String
-    '        Dim buffersize As Integer = 128
-    '        'should be long enough for username 
-    '        Dim sb As StringBuilder = New StringBuilder(buffersize)
-    '        Dim len As Integer = WebServicesUtils.AdGetLoginUserName(sb, buffersize)
-    '        sb.Length = len
-    '        Return sb.ToString
-    '    End Function
+        Friend Shared Function _GetUserName() As String
+            Dim buffersize As Integer = 128
+            'should be long enough for username 
+            Dim sb As StringBuilder = New StringBuilder(buffersize)
+            Dim len As Integer = WebServicesUtils.AdGetLoginUserName(sb, buffersize)
+            sb.Length = len
+            Return sb.ToString
+        End Function
 
-    '    Public Shared Function GetUserId(ByRef userName As String) As String
-    '        WebServicesUtils.AdInitializeWebServices
-    '        If Not WebServicesUtils.AdIsWebServicesInitialized Then
-    '            Throw New Exception("Could not initialize the web services component.")
-    '        End If
+        Public Shared Function GetUserId(ByRef userName As String) As String
+            WebServicesUtils.AdInitializeWebServices
+            If Not WebServicesUtils.AdIsWebServicesInitialized Then
+                Throw New Exception("Could not initialize the web services component.")
+            End If
 
-    '        If Not WebServicesUtils.AdIsLoggedIn Then
-    '            Throw New Exception("User is not logged in. Please log-in to Autodesk 360")
-    '        End If
+            If Not WebServicesUtils.AdIsLoggedIn Then
+                Throw New Exception("User is not logged in. Please log-in to Autodesk 360")
+            End If
 
-    '        Dim userId As String = WebServicesUtils._GetUserId
-    '        If (userId = "") Then
-    '            Throw New Exception("Could not get user id. Please log-in to Autodesk 360")
-    '        End If
+            Dim userId As String = WebServicesUtils._GetUserId
+            If (userId = "") Then
+                Throw New Exception("Could not get user id. Please log-in to Autodesk 360")
+            End If
 
-    '        userName = WebServicesUtils._GetUserName
-    '        If (userName = "") Then
-    '            Throw New Exception("Could not get user name. Please log-in to Autodesk 360")
-    '        End If
+            userName = WebServicesUtils._GetUserName
+            If (userName = "") Then
+                Throw New Exception("Could not get user name. Please log-in to Autodesk 360")
+            End If
 
-    '        Return userId
-    '    End Function
-    'End Class
-    '    <Serializable()>
-    '    Public Class EntitlementResponse
+            Return userId
+        End Function
+    End Class
 
-    '        Public Property UserId As String
-    '            Get
-    '            End Get
-    '            Set
-    '            End Set
-    '        End Property
-
-    '        Public Property AppId As String
-    '            Get
-    '            End Get
-    '            Set
-    '            End Set
-    '        End Property
-
-    '        Public Property IsValid As Boolean
-    '            Get
-    '            End Get
-    '            Set
-    '            End Set
-    '        End Property
-
-    '        Public Property Message As String
-    '            Get
-    '            End Get
-    '            Set
-    '            End Set
-    '        End Property
-    '    End Class
+    <Serializable()>
+    Public Class EntitlementResponse
+        Dim _IsValid As Boolean
+        Public Property IsValid As Boolean
+            Get
+                Return _IsValid
+            End Get
+            Set(value As Boolean)
+                _IsValid = value
+            End Set
+        End Property
+    End Class
 End Namespace
 Public Module Globals
     ' Inventor application object.
