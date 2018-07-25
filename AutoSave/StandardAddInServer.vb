@@ -99,31 +99,34 @@ Namespace AutoSave
                 'contact appsubmissions@autodesk.com for the App Id
                 Dim appId As String = "3908021420381157341"
                 Dim isValid As Boolean = Entitlement(appId, userId)
-                Dim Reg As RegistryKey = My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True)
-                ' Get the auth token. 
-                If Reg Is Nothing Then
+                Dim Reg As Object
+                Try
+                    Reg = My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True).GetValue("Arb1")
+                Catch ex As Exception
                     My.Computer.Registry.CurrentUser.CreateSubKey("Software\Autodesk\Inventor\Current Version\AutoSave")
                     Reg = My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True)
-                    Reg.SetValue("Arb1", "") ' date
+                    Reg.SetValue("Arb1", (DateTime.UtcNow - New DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds, RegistryValueKind.DWord) ' date
                     Reg.SetValue("Arb2", userId, RegistryValueKind.String) 'UserID
                     Reg.SetValue("Arb3", appId, RegistryValueKind.String) ' Appid
-                End If
+                End Try
+                ' Get the auth token. 
+
                 Dim Settings As New Settings
                 If isValid = True Then
                     Try
                         Dim uTime As Integer
                         uTime = (DateTime.UtcNow.AddDays(15) - New DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds
-                        Reg.SetValue("Arb1", uTime)
+                        My.Computer.Registry.CurrentUser.SetValue("Software\Autodesk\Inventor\Current Version\AutoSave", uTime, RegistryValueKind.DWord)
                         Fail = False
                     Catch ex As Exception
 
                     End Try
 
                 ElseIf isvalid = False Then
-                    Dim FDay As DateTime = ConvertFromUnixTimestamp(Reg.GetValue("Arb1"))
-                    If userId = Reg.GetValue("Arb2") AndAlso
-                       appId = Reg.GetValue("Arb3") AndAlso
-                      DateTime.Today < FDay Then
+                    Dim FDay As DateTime = ConvertFromUnixTimestamp(My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True).GetValue("Arb1"))
+                    If DateTime.Today < FDay AndAlso FDay > DateTime.Today.AddDays(16) AndAlso
+                        My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True).GetValue("Arb2") = userId AndAlso
+                        My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True).GetValue("Arb3") = appId Then
                         Dim days As Integer = FDay.Subtract(Today).Days
                         MessageBox.Show("License-check failed" & vbNewLine &
                                         "Confirm you have access to the internet and retry." & vbNewLine &
