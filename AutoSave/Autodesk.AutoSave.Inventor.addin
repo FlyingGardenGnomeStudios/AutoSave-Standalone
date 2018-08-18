@@ -4,7 +4,7 @@
   <ClientId>{e3bdfb3b-6cc6-45cc-a0cf-90eeea53f9e2}</ClientId>
   <DisplayName>AutoSave</DisplayName>
   <Description>AutoSave</Description>
-  <Assembly>%ProgramData%\Autodesk\ApplicationPlugins\AutoSave\AutoSave.dll</Assembly>
+  <Assembly>AutoSave.dll</Assembly>
   <LoadOnStartUp>1</LoadOnStartUp>
   <UserUnloadable>1</UserUnloadable>
   <Hidden>0</Hidden>

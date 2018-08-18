@@ -88,7 +88,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DefineDebug>true</DefineDebug>
     <DefineTrace>true</DefineTrace>
-    <OutputPath>C:\ProgramData\Autodesk\ApplicationPlugins\FlyingGarden_AutoSave.bundle\Contents\</OutputPath>
+    <OutputPath>bin\Debug\</OutputPath>
     <DocumentationFile>xml.xml</DocumentationFile>
     <NoWarn>42016,42017,42018,42019,42032,42353,42354,42355</NoWarn>
     <DebugType>full</DebugType>
@@ -127,9 +127,8 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="AddinNETFramework.AdWebServicesWrapper, Version=0.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>K:\Autodesk\Inventor 2017\Bin\AddinNETFramework.AdWebServicesWrapper.dll</HintPath>
+    <Reference Include="AddinNETFramework.AdWebServicesWrapper">
+      <HintPath>C:\Program Files\Autodesk\Inventor 2019\Bin\AddinNETFramework.AdWebServicesWrapper.dll</HintPath>
     </Reference>
     <Reference Include="autodesk.inventor.interop, Version=22.0.0.0, Culture=neutral, PublicKeyToken=d84147f8b4276564, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -278,8 +277,8 @@
     </PreBuildEvent>
     <PostBuildEvent>call "%25VS140COMNTOOLS%25vsvars32"
 			mt.exe -manifest "$(ProjectDir)AutoSave.X.manifest" -outputresource:"$(TargetPath)";#2
-		XCopy "$(TargetPath)" "\\server03\users$\tfehr\My Documents\GitHub\AutoSave\Output" /Y /R
-		XCopy "$(ProjectDir)Autodesk.AutoSave.Inventor.addin" "\\server03\users$\tfehr\My Documents\GitHub\AutoSave\Output" /Y /R
+		XCopy "$(TargetPath)" "%25AppData%25\Autodesk\ApplicationPlugins\$(TargetName)\" /Y /R
+		XCopy "$(ProjectDir)Autodesk.AutoSave.Inventor.addin" "%25AppData%25\Autodesk\ApplicationPlugins\$(TargetName)\" /Y /R
 	</PostBuildEvent>
   </PropertyGroup>
 </Project>
