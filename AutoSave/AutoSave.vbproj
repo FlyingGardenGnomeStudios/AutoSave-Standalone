@@ -278,8 +278,7 @@
     </PreBuildEvent>
     <PostBuildEvent>call "%25VS140COMNTOOLS%25vsvars32"
 			mt.exe -manifest "$(ProjectDir)AutoSave.X.manifest" -outputresource:"$(TargetPath)";#2
-		XCopy "$(TargetPath)" "\\server03\users$\tfehr\My Documents\GitHub\AutoSave\Output" /Y /R
-		XCopy "$(ProjectDir)Autodesk.AutoSave.Inventor.addin" "\\server03\users$\tfehr\My Documents\GitHub\AutoSave\Output" /Y /R
-	</PostBuildEvent>
+		XCopy "$(TargetPath)" "C:\Users\Luther\Documents\GitHub\AutoSave\Output" /Y /R
+		XCopy "$(ProjectDir)Autodesk.AutoSave.Inventor.addin" "C:\Users\Luther\Documents\GitHub\AutoSave\Output" /Y /R</PostBuildEvent>
   </PropertyGroup>
 </Project>
