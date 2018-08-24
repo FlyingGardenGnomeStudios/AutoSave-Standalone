@@ -18,7 +18,7 @@ Public Class Open_Version
                     g_inventorApplication.Documents.Open(lblOriginal.Text)
                 Catch
 
-                    Log.Log("An error occurred during 1st restore of " & lblOriginal.Text & ", attempting secondary restore")
+                    Log.Log("An error occurred during 1st restore of " & lblOriginal.Text & ", attempting secondary restore", Settings.txtLog)
                     Try
                         g_inventorApplication.ActiveDocument.PropertySets.Item("{32853F0F-3444-11D1-9E93-0060B03C1CA6}").ItemByPropId("5").Value = IO.Path.GetFileName(lblOriginal.Text)
                         If My.Computer.FileSystem.FileExists(lblOriginal.Text) Then Kill(lblOriginal.Text)
@@ -31,7 +31,7 @@ Public Class Open_Version
                         My.Settings.Kill = True
                         g_inventorApplication.Documents.Open(lblOriginal.Text)
                     Catch
-                        Log.Log("Failed to restore" & lblOriginal.Text)
+                        Log.Log("Failed to restore" & lblOriginal.Text, Settings.txtLog)
                         Windows.Forms.MessageBox.Show("An error occurred during restore" & vbNewLine & "The original document will have to be restored manually")
                     End Try
                 End Try
@@ -42,7 +42,7 @@ Public Class Open_Version
         Catch ex As Exception
             Windows.Forms.MessageBox.Show(ex.Message)
         Finally
-            Log.Log("Restored: " & lblOriginal.Text)
+            Log.Log("Restored: " & lblOriginal.Text, Settings.txtLog)
         End Try
         My.Settings.Save()
         Me.Close()

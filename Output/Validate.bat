@@ -1,1 +1,0 @@
-reg add "HKEY_CURRENT_USER\Software\Autodesk\Inventor\Current Version\AutoSave" /v Valid /t REG_SZ /d True /f
