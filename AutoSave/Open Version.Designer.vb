@@ -126,11 +126,11 @@ Partial Class Open_Version
 
     End Sub
 
-    Friend WithEvents rtbInfo As Windows.Forms.RichTextBox
-    Friend WithEvents rbOpenOld As Windows.Forms.RadioButton
-    Friend WithEvents rbRestore As Windows.Forms.RadioButton
-    Friend WithEvents rbOpenCurrent As Windows.Forms.RadioButton
-    Friend WithEvents btnOK As Windows.Forms.Button
-    Friend WithEvents btnCancel As Windows.Forms.Button
-    Friend WithEvents lblOriginal As Windows.Forms.Label
+    Friend WithEvents rtbInfo As system.Windows.Forms.RichTextBox
+    Friend WithEvents rbOpenOld As System.Windows.Forms.RadioButton
+    Friend WithEvents rbRestore As System.Windows.Forms.RadioButton
+    Friend WithEvents rbOpenCurrent As System.Windows.Forms.RadioButton
+    Friend WithEvents btnOK As System.Windows.Forms.Button
+    Friend WithEvents btnCancel As System.Windows.Forms.Button
+    Friend WithEvents lblOriginal As System.Windows.Forms.Label
 End Class

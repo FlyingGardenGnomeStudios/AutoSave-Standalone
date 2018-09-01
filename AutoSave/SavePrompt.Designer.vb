@@ -76,9 +76,9 @@ Partial Class SavePrompt
 
     End Sub
 
-    Friend WithEvents Label1 As Windows.Forms.Label
-    Friend WithEvents btnNo As Windows.Forms.Button
-    Friend WithEvents btnYes As Windows.Forms.Button
+    Friend WithEvents Label1 As System.Windows.Forms.Label
+    Friend WithEvents btnNo As System.Windows.Forms.Button
+    Friend WithEvents btnYes As System.Windows.Forms.Button
 
     Public Sub New()
 

@@ -53,7 +53,7 @@ Public Class Settings
         Folder.RootFolder = System.Environment.SpecialFolder.Desktop
         Try
             Folder.SelectedPath = txtSaveLoc.Text
-            If Folder.ShowDialog() = Windows.Forms.DialogResult.OK Then
+            If Folder.ShowDialog() = DialogResult.OK Then
                 txtSaveLoc.Text = Folder.SelectedPath & "\"
             End If
         Catch ex As Exception

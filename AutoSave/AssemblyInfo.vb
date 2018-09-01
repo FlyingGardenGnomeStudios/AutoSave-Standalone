@@ -10,14 +10,13 @@ Imports System.Runtime.InteropServices
 
 <Assembly: AssemblyTitle("AutoSave")>
 <Assembly: AssemblyDescription("AutoSave")>
-<Assembly: AssemblyCompany("Flying Garden Gnome Studios")>
+<Assembly: AssemblyCompany("Autodesk, Inc.")>
 <Assembly: AssemblyProduct("Autodesk Inventor")>
-<Assembly: AssemblyCopyright("Copyright 2017 Flying Garden Gnome Studios")>
+<Assembly: AssemblyCopyright("Copyright ?2012 Autodesk, Inc.")>
 <Assembly: AssemblyTrademark("")>
 
 'The following GUID is for the ID of the typelib if this project is exposed to COM
-
-<Assembly: Guid("bde20998-be7a-4ad7-a6a3-8632315c705e")>
+<Assembly: Guid("7a90a87f-19b4-4777-b843-2e2e8283e16b")>
 
 ' Version information for an assembly consists of the following four values:
 '

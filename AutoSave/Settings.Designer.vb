@@ -349,29 +349,29 @@ Partial Class Settings
 
     End Sub
 
-    Friend WithEvents btnOK As Windows.Forms.Button
-    Friend WithEvents btnCancel As Windows.Forms.Button
-    Friend WithEvents btnDefaults As Windows.Forms.Button
-    Friend WithEvents Label1 As Windows.Forms.Label
-    Friend WithEvents cmbProjects As Windows.Forms.ComboBox
-    Friend WithEvents cmbTime As Windows.Forms.ComboBox
-    Friend WithEvents numInt As Windows.Forms.NumericUpDown
-    Friend WithEvents Label3 As Windows.Forms.Label
-    Friend WithEvents gbSaveLoc As Windows.Forms.GroupBox
-    Friend WithEvents cmbOlderThan As Windows.Forms.ComboBox
-    Friend WithEvents numOld As Windows.Forms.NumericUpDown
-    Friend WithEvents numVer As Windows.Forms.NumericUpDown
-    Friend WithEvents rdoOlderThan As Windows.Forms.RadioButton
-    Friend WithEvents rdoVersions As Windows.Forms.RadioButton
-    Friend WithEvents btnBrowse As Windows.Forms.Button
-    Friend WithEvents txtSaveLoc As Windows.Forms.TextBox
-    Friend WithEvents gbSaveInterval As Windows.Forms.GroupBox
-    Friend WithEvents chkClean As Windows.Forms.CheckBox
-    Friend WithEvents chkDocLoc As Windows.Forms.CheckBox
-    Friend WithEvents ChkAutoSave As Windows.Forms.CheckBox
-    Friend WithEvents rdoKeepEverything As Windows.Forms.RadioButton
-    Friend WithEvents Button1 As Windows.Forms.Button
-    Friend WithEvents txtLog As Windows.Forms.TextBox
-    Friend WithEvents chkReadOnlySave As Windows.Forms.CheckBox
-    Friend WithEvents btnClear As Windows.Forms.Button
+    Friend WithEvents btnOK As System.Windows.Forms.Button
+    Friend WithEvents btnCancel As System.Windows.Forms.Button
+    Friend WithEvents btnDefaults As System.Windows.Forms.Button
+    Friend WithEvents Label1 As System.Windows.Forms.Label
+    Friend WithEvents cmbProjects As System.Windows.Forms.ComboBox
+    Friend WithEvents cmbTime As System.Windows.Forms.ComboBox
+    Friend WithEvents numInt As System.Windows.Forms.NumericUpDown
+    Friend WithEvents Label3 As System.Windows.Forms.Label
+    Friend WithEvents gbSaveLoc As System.Windows.Forms.GroupBox
+    Friend WithEvents cmbOlderThan As System.Windows.Forms.ComboBox
+    Friend WithEvents numOld As System.Windows.Forms.NumericUpDown
+    Friend WithEvents numVer As System.Windows.Forms.NumericUpDown
+    Friend WithEvents rdoOlderThan As System.Windows.Forms.RadioButton
+    Friend WithEvents rdoVersions As System.Windows.Forms.RadioButton
+    Friend WithEvents btnBrowse As System.Windows.Forms.Button
+    Friend WithEvents txtSaveLoc As System.Windows.Forms.TextBox
+    Friend WithEvents gbSaveInterval As System.Windows.Forms.GroupBox
+    Friend WithEvents chkClean As System.Windows.Forms.CheckBox
+    Friend WithEvents chkDocLoc As System.Windows.Forms.CheckBox
+    Friend WithEvents ChkAutoSave As System.Windows.Forms.CheckBox
+    Friend WithEvents rdoKeepEverything As System.Windows.Forms.RadioButton
+    Friend WithEvents Button1 As System.Windows.Forms.Button
+    Friend WithEvents txtLog As System.Windows.Forms.TextBox
+    Friend WithEvents chkReadOnlySave As System.Windows.Forms.CheckBox
+    Friend WithEvents btnClear As System.Windows.Forms.Button
 End Class

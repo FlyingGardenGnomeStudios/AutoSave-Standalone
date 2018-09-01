@@ -1,5 +1,4 @@
 Imports Inventor
-Imports System.Runtime.InteropServices
 Imports Microsoft.Win32
 Imports System.Linq
 Imports System.Windows.Forms
@@ -11,12 +10,11 @@ Imports RestSharp
 Imports System.Net
 Imports RestSharp.Deserializers
 Imports Scripting
-
-
+Imports System.Runtime.InteropServices
 
 Namespace AutoSave
     <ProgIdAttribute("AutoSave.StandardAddInServer"),
-    GuidAttribute("e3bdfb3b-6cc6-45cc-a0cf-90eeea53f9e2")>
+    GuidAttribute("a97cd3d3-b10e-42ce-99c4-07a5a6310424")>
     Public Class StandardAddInServer
         Implements Inventor.ApplicationAddInServer
         Dim WithEvents m_UIEvents2 As UserInputEvents
@@ -94,6 +92,7 @@ Namespace AutoSave
             If (isInitialize = True) Then
                 Dim userId As String = ""
                 mgr.GetUserId(userId)
+                Debug.WriteLine(mgr.GetUserId(userId))
                 Dim username As String = ""
                 mgr.GetLoginUserName(username)
                 'replace your App id here...
@@ -106,125 +105,44 @@ Namespace AutoSave
                 Catch ex As Exception
                     My.Computer.Registry.CurrentUser.CreateSubKey("Software\Autodesk\Inventor\Current Version\AutoSave")
                     Reg = My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True)
-                    Reg.setvalue("Arb1", GetUnixTimestamp(DateTime.UtcNow.AddDays(-1)), RegistryValueKind.DWord) ' date
-                    ' Reg.SetValue("Arb1", (DateTime.UtcNow - New DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds, RegistryValueKind.DWord) ' date
+                    Reg.SetValue("Arb1", (DateTime.UtcNow - New DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds, RegistryValueKind.DWord) ' date
                     Reg.SetValue("Arb2", userId, RegistryValueKind.String) 'UserID
                     Reg.SetValue("Arb3", appId, RegistryValueKind.String) ' Appid
                 End Try
                 ' Get the auth token. 
+
                 Dim Settings As New Settings
-                Dim FDay As DateTime = ConvertFromUnixTimestamp(My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True).GetValue("Arb1"))
                 If isValid = True Then
                     Try
-                        Reg = My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True)
-                        Reg.setvalue("Arb1", GetUnixTimestamp(DateTime.UtcNow.AddDays(15)), RegistryValueKind.DWord) ' date
-                        Reg.SetValue("Arb2", userId, RegistryValueKind.String) 'UserID
+                        Dim uTime As Integer
+                        uTime = (DateTime.UtcNow.AddDays(15) - New DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds
+                        My.Computer.Registry.CurrentUser.SetValue("Software\Autodesk\Inventor\Current Version\AutoSave", uTime, RegistryValueKind.DWord)
                         Fail = False
-                        My.Settings.Authorized = True
                     Catch ex As Exception
                     End Try
                 ElseIf isValid = False Then
-                    ' MsgBox(DateTime.Today & " " & FDay & " " & DateTime.UtcNow.AddDays(15))
-                    If DateTime.UtcNow < FDay AndAlso FDay < DateTime.UtcNow.AddDays(15) Then
-                        Dim days As Integer = FDay.Subtract(DateTime.Today).Days
-                        LicenseError = "License check fail" & vbNewLine &
-                                        "Confirm you have access to the internet and retry." & vbNewLine &
-                                        "The app is functioning in a grace period." & vbNewLine &
-                                        "There are currently " & days & " days remaining."
-                        Fail = False
-                        My.Settings.Authorized = True
-                        MessageBox.Show(LicenseError, "AutoSave Add-in")
-                    ElseIf userId = "" Then
+                    Dim FDay As DateTime = ConvertFromUnixTimestamp(My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True).GetValue("Arb1"))
+                    If userId = "" Then
                         LicenseError = "No user logged in" & vbNewLine &
                                         "Please sign in to Autodesk 360 to use AutoSave."
-                        My.Settings.Authorized = False
-                    ElseIf My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True).GetValue("Arb2") <> userId Then
-                        LicenseError = "Authorization failed" & vbNewLine &
-                                        "The AutoSave add-in has not been registered" & vbNewLine &
-                                        "to the current user"
-                        Fail = True
-                        My.Settings.Authorized = False
+                    ElseIf DateTime.Today < FDay AndAlso FDay > DateTime.Today.AddDays(16) AndAlso
+                    My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True).GetValue("Arb2") = userId AndAlso
+                    My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True).GetValue("Arb3") = appId Then
+                        Dim days As Integer = FDay.Subtract(Today).Days
+                        LicenseError = "License-check failed" & vbNewLine &
+                                        "Confirm you have access to the internet and retry." & vbNewLine &
+                                        "The app is currently functioning in a grace period." & vbNewLine &
+                                        "There are currently " & days & " days remaining."
+                        Fail = False
                     Else
                         LicenseError = "AutoSave license-check fail" & vbNewLine &
                                         "Please purchase the add-in from the appstore."
                         Fail = True
-                        My.settings.authorized = False
                     End If
                 End If
             End If
-            My.settings.save
         End Sub
-        'Private Sub ActivationCheck()
-        '    Dim mgr As CWebServicesManager = New CWebServicesManager
-        '    Dim isInitialize As Boolean = mgr.Initialize
-        '    If (isInitialize = True) Then
-        '        Dim userId As String = ""
-        '        mgr.GetUserId(userId)
-        '        Debug.WriteLine(mgr.GetUserId(userId))
-        '        Dim username As String = ""
-        '        mgr.GetLoginUserName(username)
-        '        'replace your App id here...
-        '        'contact appsubmissions@autodesk.com for the App Id
-        '        Dim appId As String = "3908021420381157341"
-        '        Dim isValid As Boolean = Entitlement(appId, userId)
-        '        Dim Reg As Object
-        '        Try
-        '            Reg = My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True)
-        '            Reg.SetValue("Arb1", (DateTime.UtcNow - New DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds, RegistryValueKind.DWord) ' date
-        '        Catch ex As Exception
-        '            My.Computer.Registry.CurrentUser.CreateSubKey("Software\Autodesk\Inventor\Current Version\AutoSave")
-        '            Reg = My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True)
-        '            Reg.SetValue("Arb1", (DateTime.UtcNow - New DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds, RegistryValueKind.DWord) ' date
-        '            Reg.SetValue("Arb2", userId, RegistryValueKind.String) 'UserID
-        '            Reg.SetValue("Arb3", appId, RegistryValueKind.String) ' Appid
-        '        End Try
-        '        ' Get the auth token. 
-        '        Dim Settings As New Settings
-        '        If isValid = True Then
-        '            Try
-        '                Reg = My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True)
-        '                Reg.SetValue("Arb1", (DateTime.UtcNow.AddDays(15) - New DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds, RegistryValueKind.DWord) ' date
-        '                Fail = False
-        '                My.Settings.Unathorized = False
-        '            Catch ex As Exception
-        '            End Try
-        '        ElseIf isvalid = False Then
-        '            Dim FDay As DateTime = ConvertFromUnixTimestamp(My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True).GetValue("Arb1"))
-        '            MsgBox(FDay & vbNewLine &
-        '                   My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True).GetValue("Arb2") & vbNewLine & userId &
-        '                   vbNewLine & My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True).GetValue("Arb3") & vbNewLine & appId)
-        '            If userId = "" Then
-        '                LicenseError = "No user logged in" & vbNewLine &
-        '                                "Please sign in to Autodesk 360 to use AutoSave."
-        '                Fail = True
-        '                My.Settings.Unathorized = True
-        '            ElseIf DateTime.Today.AddDays(-1) < FDay AndAlso FDay < DateTime.Today.AddDays(16) AndAlso
-        '            My.Computer.Registry.CurrentUser.OpenSubKey("Software\Autodesk\Inventor\Current Version\AutoSave", True).GetValue("Arb3") = appId Then
-        '                Dim days As Integer = FDay.Subtract(Today).Days
-        '                LicenseError = "License-check failed" & vbNewLine &
-        '                                "Confirm you have access to the internet and retry." & vbNewLine &
-        '                                "The app is functioning in a grace period." & vbNewLine &
-        '                                "There are currently " & days & " days remaining."
-        '                MessageBox.Show(LicenseError, "AutoSave Add-in")
-        '                Fail = False
-        '                My.Settings.Unathorized = False
-        '            Else
-        '                LicenseError = "AutoSave license-check fail" & vbNewLine &
-        '                                "Please purchase the add-in from the appstore."
-        '                My.Settings.Unathorized = True
-        '                Fail = True
-        '            End If
-        '        End If
-        '    End If
-        '    My.Settings.Save
-        'End Sub
-        Private Function GetUnixTimestamp(ByVal currDate As DateTime) As Double
-            'create Timespan by subtracting the value provided from the Unix Epoch
-            Dim span As TimeSpan = (currDate - New DateTime(1970, 1, 1, 0, 0, 0, 0))
-            'return the total seconds (which is a UNIX timestamp)
-            Return span.TotalSeconds
-        End Function
-        Private Shared Function ConvertFromUnixTimestamp(ByVal timestamp As Double) As DateTime
+        Private Shared Function ConvertFromUnixTimestamp(ByVal timestamp As Long) As DateTime
             Dim origin As DateTime = New DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
             Return origin.AddSeconds(timestamp)
         End Function
@@ -272,10 +190,6 @@ Namespace AutoSave
             Next
             bkgAutoSave = New System.Threading.Thread(AddressOf runAutoSave)
             bkgAutoSave.Start()
-            ActivationCheck()
-            If Fail = True Then
-                MessageBox.Show(LicenseError, "AutoSave Add-in")
-            End If
         End Sub
 
         Private Sub m_uiEvents_OnResetRibbonInterface(Context As NameValueMap) Handles m_uiEvents.OnResetRibbonInterface
@@ -294,14 +208,13 @@ Namespace AutoSave
         End Sub
         Private Sub runAutoSave() 'Reg As RegistryKey)
             Dim InvProcess() As Process = Process.GetProcessesByName("Inventor")
-            Log.Log("Inventor Accessed", Settings.txtLog)
+
             Do While Process.GetProcessesByName("Inventor").Count = 1
-                If My.Settings.Autosave = True AndAlso My.Settings.Authorized = True Then
+                If My.Settings.Autosave = True Then
                     Dim interval As Integer = My.Settings.Interval
                     If interval <> Nothing AndAlso g_inventorApplication.Documents.VisibleDocuments.Count <> 0 Then
                         InvProcess = Process.GetProcessesByName("Inventor")
                         If InvProcess.Count > 1 Then
-                            Log.Log("Multiple Inventor instances detected - disabling AutoSave", Settings.txtLog)
                             MessageBox.Show("AutoSave has detected multiple instances of Inventor" & vbNewLine &
                                                 "This function can only work while a single instance is running")
                             Exit Sub
@@ -322,9 +235,7 @@ Namespace AutoSave
             Loop
         End Sub
         Private Sub SaveFiles()
-            If Fail = True And My.Settings.Autosave = False Then
-                Log.Log("Authentication error - skipping save", Settings.txtLog)
-            End If
+
             Dim Proj As Integer = My.Settings.Projects
             If My.Settings.KeepOlderThan = True And My.Settings.Cleanup = True Then
                 Cleanup(g_inventorApplication.ActiveDocument)
@@ -347,18 +258,18 @@ Namespace AutoSave
         Private Sub DirtyWork(oDoc As Inventor.Document)
             Dim Prop As Inventor.Property = Nothing
             If oDoc.Dirty = False Then
-                Log.Log(oDoc.DisplayName & " Skipped save - No changes since last save", Settings.txtLog)
+                Log.Log(oDoc.DisplayName & " Skipped save - No changes since last save")
                 Exit Sub
             End If
             If oDoc.DocumentType = DocumentTypeEnum.kAssemblyDocumentObject Then
                 Dim oAssDoc As AssemblyDocument = oDoc
                 If Not oAssDoc.ComponentDefinition.ActiveOccurrence Is Nothing Then
-                    Log.Log("Skipped saving " & oAssDoc.DisplayName & vbNewLine & "Currently being edited by user.", Settings.txtLog)
+                    Log.Log("Skipped saving " & oAssDoc.DisplayName & vbNewLine & "Currently being edited by user.")
                     Exit Sub
                 End If
             ElseIf oDoc.DocumentType = DocumentTypeEnum.kPartDocumentObject Then
                 If Not oDoc.ActivatedObject Is Nothing Then
-                    Log.Log("Skipped saving " & oDoc.DisplayName & vbNewLine & "Currently being edited by user.", Settings.txtLog)
+                    Log.Log("Skipped saving " & oDoc.DisplayName & vbNewLine & "Currently being edited by user.")
                     Exit Sub
                 End If
             End If
@@ -369,9 +280,9 @@ Namespace AutoSave
                 If ans = MsgBoxResult.Yes Then
                     Try
                         oDoc.Save()
-                        Log.Log("Initial save: " & oDoc.DisplayName, Settings.txtLog)
+                        Log.Log("Initial save: " & oDoc.DisplayName)
                     Catch
-                        Log.Log("Skipped initial save of " & oDoc.DisplayName, Settings.txtLog)
+                        Log.Log("Skipped initial save of " & oDoc.DisplayName)
                         Exit Sub
                     End Try
                 End If
@@ -426,11 +337,11 @@ Namespace AutoSave
                             Read.IsReadOnly = True
                         Catch ex As Exception
                             'MessageBox.Show("Error encountered while saving " & oDoc.DisplayName & vbNewLine & ex.Message)
-                            Log.Log("Error encountered while saving " & oDoc.DisplayName & vbNewLine & ex.Message, Settings.txtLog)
+                            Log.Log("Error encountered while saving " & oDoc.DisplayName & vbNewLine & ex.Message)
                         End Try
 
                     End If
-                    Log.Log("Saved document: " & SaveName, Settings.txtLog)
+                    Log.Log("Saved document: " & SaveName)
                     Directory = IO.Path.GetDirectoryName(SaveName)
                     If My.Settings.KeepVersions = True Then
                         Dim dir As New DirectoryInfo(Directory)
@@ -439,7 +350,7 @@ Namespace AutoSave
                         For X = 0 To FileList.Count - CInt(My.Settings.SaveVersions) - 1
                             System.IO.File.SetAttributes(Directory & "\" & FileList.Item(X).ToString, FileAttributes.ReadOnly = False)
                             Kill(Directory & "\" & FileList.Item(X).ToString)
-                            Log.Log("Deleted old version: " & Directory & "\" & FileList.Item(X).ToString, Settings.txtLog)
+                            Log.Log("Deleted old version: " & Directory & "\" & FileList.Item(X).ToString)
                         Next
                     ElseIf My.Settings.KeepOlderThan = True Then
                         Dim SearchDir As New DirectoryInfo(Directory)
@@ -448,13 +359,13 @@ Namespace AutoSave
                             If span.TotalSeconds > My.Settings.OldInterval Then
                                 file.IsReadOnly = False
                                 Kill(file.FullName)
-                                Log.Log("Deleted old version: " & file.FullName, Settings.txtLog)
+                                Log.Log("Deleted old version: " & file.FullName)
                             End If
                         Next
                     End If
                 Catch ex As Exception
                     'MessageBox.Show("An error ocurred while saving: " & oDoc.DisplayName & vbNewLine & ex.Message)
-                    Log.Log("Error encountered while saving: " & ex.Message, Settings.txtLog)
+                    Log.Log("Error encountered while saving: " & ex.Message)
                 Finally
                     Try
                         Prop.Delete()
@@ -465,8 +376,9 @@ Namespace AutoSave
                 End Try
                 oDoc.Dirty = False
             ElseIf ReadCheck.IsReadOnly = True Then
-                Log.Log(oDoc.DisplayName & " Not saved - Read only - User parameter", Settings.txtLog)
+                Log.Log(oDoc.DisplayName & " Not saved - Read only - User parameter")
             End If
+
         End Sub
         Private Sub Cleanup(oDoc As Document)
             Dim Location, Savename As String
@@ -483,7 +395,7 @@ Namespace AutoSave
                         For Each file As FileInfo In SearchDir.GetFiles(IO.Path.GetFileNameWithoutExtension(oDoc.FullFileName) & ".????" & IO.Path.GetExtension(oDoc.FullFileName).ToString)
                             file.IsReadOnly = False
                             Kill(file.FullName)
-                            Log.Log("Deleted old version: " & file.FullName, Settings.txtLog)
+                            Log.Log("Deleted old version: " & file.FullName)
                         Next
                         If Directory.GetFiles(Location, "*.*", SearchOption.AllDirectories).Length = 0 Then Directory.Delete(Location)
                     End If
@@ -498,7 +410,7 @@ Namespace AutoSave
                         For Each file As FileInfo In SearchDir.GetFiles(IO.Path.GetFileNameWithoutExtension(oDoc.FullFileName) & ".????" & IO.Path.GetExtension(oDoc.FullFileName).ToString)
                             file.IsReadOnly = False
                             Kill(file.FullName)
-                            Log.Log("Deleted old version: " & file.FullName, Settings.txtLog)
+                            Log.Log("Deleted old version: " & file.FullName)
                         Next
                         If Directory.GetFiles(Location, "*.*", SearchOption.AllDirectories).Length = 0 Then Directory.Delete(Location)
                     End If
@@ -576,18 +488,14 @@ Namespace AutoSave
     End Class
 #End Region
     Public Module Log
-        Public Sub Log(Text As String, txtlog As Control)
+        Public Sub Log(Text As String)
             Dim fileExists As Boolean = IO.File.Exists(IO.Path.Combine(My.Computer.FileSystem.SpecialDirectories.Temp, "log.txt"))
             Using sw As New StreamWriter(IO.File.Open(IO.Path.Combine(My.Computer.FileSystem.SpecialDirectories.Temp, "log.txt"), FileMode.Append))
                 sw.WriteLine(
          IIf(fileExists,
             DateTime.Now & " " & Text,
-                          "Logging started:" & DateTime.Now & vbNewLine & DateTime.Now & " " & Text))
-                sw.Flush()
-                sw.Close()
-                txtlog.Text = System.IO.File.ReadAllText(IO.Path.Combine(My.Computer.FileSystem.SpecialDirectories.Temp, "log.txt"))
+             "Logging started:" & DateTime.Now & vbNewLine & DateTime.Now & " " & Text))
             End Using
-
         End Sub
     End Module
 
