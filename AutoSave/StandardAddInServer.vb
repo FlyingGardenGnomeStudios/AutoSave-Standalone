@@ -14,7 +14,7 @@ Imports System.Runtime.InteropServices
 
 Namespace AutoSave
     <ProgIdAttribute("AutoSave.StandardAddInServer"),
-    GuidAttribute("a97cd3d3-b10e-42ce-99c4-07a5a6310424")>
+    GuidAttribute("e3bdfb3b-6cc6-45cc-a0cf-90eeea53f9e2")>
     Public Class StandardAddInServer
         Implements Inventor.ApplicationAddInServer
         Dim WithEvents m_UIEvents2 As UserInputEvents
