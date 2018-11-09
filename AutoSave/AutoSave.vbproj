@@ -129,14 +129,10 @@
     <Compile Include="StandardAddInServer.vb" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="AutoSave.X.manifest">
-      <SubType>Designer</SubType>
-    </None>
+    <None Include="AutoSave.X.manifest" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Autodesk.AutoSave.Inventor.addin">
-      <SubType>Designer</SubType>
-    </None>
+    <None Include="Autodesk.AutoSave.Inventor.addin" />
   </ItemGroup>
   <ItemGroup>
     <None Include="My Project\Settings.settings">

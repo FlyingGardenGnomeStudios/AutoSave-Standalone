@@ -1,7 +1,7 @@
 <Addin Type="Standard">
   <!--Created for Autodesk Inventor Version 21.0-->
-  <ClassId>{e3bdfb3b-6cc6-45cc-a0cf-90eeea53f9e2}</ClassId>
-  <ClientId>{e3bdfb3b-6cc6-45cc-a0cf-90eeea53f9e2}</ClientId>
+  <ClassId>{a97cd3d3-b10e-42ce-99c4-07a5a6310424}</ClassId>
+  <ClientId>{a97cd3d3-b10e-42ce-99c4-07a5a6310424}</ClientId>
   <DisplayName>AutoSave</DisplayName>
   <Description>AutoSave</Description>
   <Assembly>AutoSave.dll</Assembly>
