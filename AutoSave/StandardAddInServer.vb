@@ -25,6 +25,7 @@ Namespace AutoSave
         Dim _invApp As Inventor.Application
         Dim Changes As ApplicationEvents
         Dim SkipSave As Boolean
+        Dim ChangeReport As New List(Of String)
         Dim IsIdle As Boolean = True
         Dim Settings As New Settings
         Public ReportLog As String
@@ -49,8 +50,6 @@ Namespace AutoSave
             m_AutoSaveButton = controlDefs.AddButtonDefinition("Settings", "UIAutoSave", CommandTypesEnum.kShapeEditCmdType, AddInClientID,, "Change options for AutoSave", smallIcon, largeIcon, ButtonDisplayEnum.kDisplayTextInLearningMode)
             m_AppEvents = g_inventorApplication.ApplicationEvents
             ' Add to the user interface, if it's the first time.
-            AddHandler Changes.OnDocumentChange, AddressOf SetDirtyFlag
-
             If firstTime Then
                 AddToUserInterface()
             End If
@@ -211,6 +210,7 @@ Namespace AutoSave
         End Sub
         Private Sub runAutoSave() 'Reg As RegistryKey)
             Dim InvProcess() As Process = Process.GetProcessesByName("Inventor")
+            Log.Log("Inventor Accessed")
             Do While Process.GetProcessesByName("Inventor").Count = 1
                 If My.Settings.Autosave = True Then
                     Dim interval As Integer = My.Settings.Interval
@@ -233,6 +233,7 @@ Namespace AutoSave
                         End If
                     End If
                 End If
+                Settings.txtLog.Clear()
                 Threading.Thread.Sleep(60000)
             Loop
         End Sub
@@ -260,7 +261,8 @@ Namespace AutoSave
             Dim Prop As Inventor.Property = Nothing
             Dim customPropSet As Inventor.PropertySet
             customPropSet = oDoc.PropertySets.Item("Inventor User Defined Properties")
-            If oDoc.Dirty = False AndAlso customPropSet.Item("Dirty").Value = False Then
+            'If oDoc.Dirty = False AndAlso customPropSet.Item("Dirty").Value = False Then
+            If Not ChangeReport.Contains(oDoc.FullFileName) Then
                 Log.Log(oDoc.DisplayName & " Skipped save - No changes since last save")
                 Exit Sub
             End If
@@ -371,18 +373,13 @@ Namespace AutoSave
                     g_inventorApplication.SilentOperation = False
                     SkipSave = False
                 End Try
-                Try
-                    Prop = customPropSet.Item("Dirty")
-                    Prop.Value = False
-                    Catch ex As Exception
-                    Log.Log("Error encountered while changing 'Dirty' property on " & oDoc.DisplayName & vbNewLine & ex.Message)
-                End Try
-                'oDoc.Dirty = False
+                ChangeReport.Remove(oDoc.FullFileName)
             ElseIf ReadCheck.IsReadOnly = True Then
                 Log.Log(oDoc.DisplayName & " Not saved - Read only - User parameter")
             End If
 
         End Sub
+
         Private Sub Cleanup(oDoc As Document)
             Dim Location, Savename As String
             If My.Settings.UseDocumentLocation = True Then
@@ -446,25 +443,9 @@ Namespace AutoSave
                 Cleanup(DocumentObject)
             End If
         End Sub
-        Private Sub SetDirtyFlag()
-            Dim Prop As Inventor.Property = Nothing
-            Dim customPropSet As Inventor.PropertySet
-            Dim oDoc As Inventor.Document = _invApp.ActiveDocument
-            customPropSet = oDoc.PropertySets.Item("Inventor User Defined Properties")
-            Try
-                Prop = customPropSet.Add(oDoc.FullDocumentName, "Dirty")
-            Catch
-                Try
-                    Prop = customPropSet.Item("Dirty")
-                    Prop.Value = True
-                Catch ex As Exception
-                    Log.Log("Error encountered while saving " & oDoc.DisplayName & vbNewLine & ex.Message)
-                End Try
-            End Try
-        End Sub
+
         Private Sub m_AppEvents_OnOpenDocument(DocumentObject As _Document, FullDocumentName As String, BeforeOrAfter As EventTimingEnum, Context As NameValueMap, ByRef HandlingCode As HandlingCodeEnum) Handles m_AppEvents.OnOpenDocument
-            Dim customPropSet As Inventor.PropertySet = DocumentObject.PropertySets.Item("Inventor User Defined Properties")
-            Dim Prop As Inventor.Property
+
             Dim OpenVersion As New Open_Version
             If BeforeOrAfter = EventTimingEnum.kAfter Then
                 Dim oDoc As Document = g_inventorApplication.ActiveDocument
@@ -472,6 +453,8 @@ Namespace AutoSave
                 If Read.IsReadOnly = True Then
                     Dim Copy, Original As String
                     Try
+                        Dim customPropSet As Inventor.PropertySet = DocumentObject.PropertySets.Item("Inventor User Defined Properties")
+                        Dim Prop As Inventor.Property
                         Prop = customPropSet.Item("Original")
                         If customPropSet.Item("Original").Value = "" Then Exit Sub
                         g_inventorApplication.SilentOperation = True
@@ -494,16 +477,6 @@ Namespace AutoSave
                     End Try
                 End If
             End If
-            Try
-                Prop = customPropSet.Add(False, "Dirty")
-            Catch
-                Try
-                    Prop = customPropSet.Item("Dirty")
-                    Prop.Value = False
-                Catch ex As Exception
-                    Log.Log("Error encountered while creating 'Dirty' property " & DocumentObject.DisplayName & vbNewLine & ex.Message)
-                End Try
-            End Try
         End Sub
 
         Private Sub m_UIEvents2_OnActivateCommand(CommandName As String, Context As NameValueMap) Handles m_UIEvents2.OnActivateCommand
@@ -513,14 +486,12 @@ Namespace AutoSave
         Private Sub m_UIEvents2_OnTerminateCommand(CommandName As String, Context As NameValueMap) Handles m_UIEvents2.OnTerminateCommand
             IsIdle = True
         End Sub
-
-        Private Sub m_AppEvents_OnCloseDocument(DocumentObject As _Document, FullDocumentName As String, BeforeOrAfter As EventTimingEnum, Context As NameValueMap, ByRef HandlingCode As HandlingCodeEnum) Handles m_AppEvents.OnCloseDocument
-            Try
-                Dim customPropSet As Inventor.PropertySet = DocumentObject.PropertySets.Item("Inventor User Defined Properties")
-                Dim Prop As Inventor.Property = customPropSet.Add(False, "Dirty")
-                Prop.Delete()
-            Catch
-            End Try
+        Private Sub m_AppEvents_OnDocumentChange(DocumentObject As _Document, BeforeOrAfter As EventTimingEnum, ReasonsForChange As CommandTypesEnum, Context As NameValueMap, ByRef HandlingCode As HandlingCodeEnum) Handles m_AppEvents.OnDocumentChange
+            If BeforeOrAfter = EventTimingEnum.kAfter Then
+                If Not ChangeReport.Contains(DocumentObject.FullFileName) Then
+                    ChangeReport.Add(DocumentObject.FullFileName)
+                End If
+            End If
         End Sub
     End Class
 #End Region

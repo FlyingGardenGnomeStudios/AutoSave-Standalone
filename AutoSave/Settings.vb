@@ -159,6 +159,8 @@ Public Class Settings
     End Sub
 
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
+        txtLog.Clear()
+        txtLog.Text = File.ReadAllText(IO.Path.Combine(My.Computer.FileSystem.SpecialDirectories.Temp, "log.txt"))
         If Button1.Text = "V" Then
             Me.Height = 510
             Button1.Text = "Λ"
