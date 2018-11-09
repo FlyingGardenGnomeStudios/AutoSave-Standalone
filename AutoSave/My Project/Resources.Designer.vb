@@ -89,5 +89,25 @@ Namespace My.Resources
                 Return CType(obj,System.Drawing.Icon)
             End Get
         End Property
+        
+        '''<summary>
+        '''  Looks up a localized string similar to Version 1.6.1
+        '''	Added intermediate dirty flag to insulate the standard flag from improper overwrites
+        '''Version 1.6
+        '''	Corrected subscription issues - instituted 15 day grace period
+        '''Version 1.5.2
+        '''	Forced update of &quot;Part Name&quot; iProperty after autosave. Some people were having the autosave part number display on their active drawing.
+        '''	Added log reset button
+        '''Version 1.5.1
+        '''	Fixed bug which skipped saving active drawing documents
+        '''Version 1.5
+        '''	Some backups incorrectly deleting during Inventor load
+        '''	Fixed sav [rest of string was truncated]&quot;;.
+        '''</summary>
+        Friend ReadOnly Property Changelog() As String
+            Get
+                Return ResourceManager.GetString("Changelog", resourceCulture)
+            End Get
+        End Property
     End Module
 End Namespace
