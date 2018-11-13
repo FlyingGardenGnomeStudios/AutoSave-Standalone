@@ -94,7 +94,6 @@ Namespace AutoSave
             If (isInitialize = True) Then
                 Dim userId As String = ""
                 mgr.GetUserId(userId)
-                Debug.WriteLine(mgr.GetUserId(userId))
                 Dim username As String = ""
                 mgr.GetLoginUserName(username)
                 'replace your App id here...
@@ -258,9 +257,6 @@ Namespace AutoSave
         End Sub
 
         Private Sub DirtyWork(oDoc As Inventor.Document)
-            Dim Prop As Inventor.Property = Nothing
-            Dim customPropSet As Inventor.PropertySet
-            customPropSet = oDoc.PropertySets.Item("Inventor User Defined Properties")
             'If oDoc.Dirty = False AndAlso customPropSet.Item("Dirty").Value = False Then
             If Not ChangeReport.Contains(oDoc.FullFileName) Then
                 Log.Log(oDoc.DisplayName & " Skipped save - No changes since last save")
@@ -300,16 +296,6 @@ Namespace AutoSave
                 Try
                     g_inventorApplication.SilentOperation = True
                     SkipSave = True
-                    Try
-                        Prop = customPropSet.Add(oDoc.FullDocumentName, "Original")
-                    Catch
-                        Try
-                            Prop = customPropSet.Item("Original")
-                            Prop.Value = oDoc.FullDocumentName
-                        Catch ex As Exception
-                            Log.Log("Error encountered while saving " & oDoc.DisplayName & vbNewLine & ex.Message)
-                        End Try
-                    End Try
                     If My.Settings.UseDocumentLocation = True Then
                         If Not My.Computer.FileSystem.DirectoryExists(IO.Path.GetDirectoryName(oDoc.FullFileName) & "\AutoSave") Then
                             My.Computer.FileSystem.CreateDirectory(IO.Path.GetDirectoryName(oDoc.FullFileName) & "\AutoSave")
@@ -319,10 +305,9 @@ Namespace AutoSave
                         Tag = GetTag(oDoc, IO.Path.GetDirectoryName(SaveName))
                         SaveName = SaveName.Insert(InStrRev(SaveName, "."), Tag & ".")
                         Try
-                            oDoc.SaveAs(SaveName, True)
                             oDoc.PropertySets.Item("{32853F0F-3444-11D1-9E93-0060B03C1CA6}").ItemByPropId("5").Value = oDoc.DisplayName
-                            Read = My.Computer.FileSystem.GetFileInfo(SaveName)
-                            Read.IsReadOnly = True
+                            oDoc.SaveAs(SaveName, True)
+                            Write_Save_Data(SaveName, oDoc.FullDocumentName)
                         Catch ex As Exception
                             Log.Log("Error encountered while saving " & oDoc.DisplayName & vbNewLine & ex.Message)
                         End Try
@@ -334,9 +319,9 @@ Namespace AutoSave
                         Tag = GetTag(oDoc, Location)
                         SaveName = Location & IO.Path.GetFileName(oDoc.FullFileName).Insert(InStrRev(IO.Path.GetFileName(oDoc.FullFileName), "."), Tag & ".")
                         Try
+                            oDoc.PropertySets.Item("{32853F0F-3444-11D1-9E93-0060B03C1CA6}").ItemByPropId("5").Value = oDoc.DisplayName
                             oDoc.SaveAs(SaveName, True)
-                            Read = My.Computer.FileSystem.GetFileInfo(SaveName)
-                            Read.IsReadOnly = True
+                            Write_Save_Data(SaveName, oDoc.FullDocumentName)
                         Catch ex As Exception
                             Log.Log("Error encountered while saving " & oDoc.DisplayName & vbNewLine & ex.Message)
                         End Try
@@ -366,10 +351,7 @@ Namespace AutoSave
                 Catch ex As Exception
                     Log.Log("Error encountered while saving: " & ex.Message)
                 Finally
-                    Try
-                        Prop.Delete()
-                    Catch
-                    End Try
+
                     g_inventorApplication.SilentOperation = False
                     SkipSave = False
                 End Try
@@ -378,6 +360,28 @@ Namespace AutoSave
                 Log.Log(oDoc.DisplayName & " Not saved - Read only - User parameter")
             End If
 
+        End Sub
+        Private Sub Write_Save_Data(ByRef SaveName As String, OldName As String)
+            Dim sDoc As Document = g_inventorApplication.Documents.Open(SaveName, False)
+            Dim Prop As Inventor.Property = Nothing
+            Dim customPropSet As Inventor.PropertySet
+            Dim Read As IO.FileInfo
+            customPropSet = sDoc.PropertySets.Item("Inventor User Defined Properties")
+            Try
+                Prop = customPropSet.Add(OldName, "Original")
+            Catch
+                Try
+                    Prop = customPropSet.Item("Original")
+                    Prop.Value = sDoc.FullDocumentName
+                Catch ex As Exception
+                    Log.Log("Error encountered while writing data to " & sDoc.DisplayName & vbNewLine & ex.Message)
+                End Try
+            Finally
+                Read = My.Computer.FileSystem.GetFileInfo(SaveName)
+                sDoc.Save()
+                Read.IsReadOnly = True
+                sDoc.Close()
+            End Try
         End Sub
 
         Private Sub Cleanup(oDoc As Document)
