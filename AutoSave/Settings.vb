@@ -1,4 +1,5 @@
 ﻿
+Imports System.ComponentModel
 Imports System.IO
 Imports System.Windows.Forms
 Imports Microsoft.Win32
@@ -160,7 +161,9 @@ Public Class Settings
 
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
         txtLog.Clear()
-        txtLog.Text = File.ReadAllText(IO.Path.Combine(My.Computer.FileSystem.SpecialDirectories.Temp, "log.txt"))
+        For Each Line As String In File.ReadLines(IO.Path.Combine(My.Computer.FileSystem.SpecialDirectories.Temp, "log.txt"))
+            txtLog.AppendText(Line)
+        Next
         If Button1.Text = "V" Then
             Me.Height = 510
             Button1.Text = "Λ"
@@ -180,5 +183,10 @@ Public Class Settings
             sw.WriteLine("Log reset:" & DateTime.Now)
         End Using
         txtLog.Text = "Log reset:" & DateTime.Now
+    End Sub
+
+    Private Sub Settings_Closing(sender As Object, e As CancelEventArgs) Handles Me.Closing
+        Me.Height = 360
+        Button1.Text = "V"
     End Sub
 End Class

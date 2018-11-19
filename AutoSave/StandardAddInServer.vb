@@ -226,16 +226,30 @@ Namespace AutoSave
                                 While IsIdle = False
                                     Threading.Thread.Sleep(1000)
                                 End While
+                                Dim processes As Process() = Process.GetProcessesByName("Inventor")
+                                For Each process As Process In processes
+                                    Dim Test As New Test
+                                    Dim windows As IDictionary(Of IntPtr, String) = Test.GetOpenWindowsFromPID(process.Id)
+                                    Do Until windows.Count = 1
+                                        If windows.Count > 1 Then
+                                            Threading.Thread.Sleep(1000)
+                                        End If
+                                        windows.Clear()
+                                        windows = Test.GetOpenWindowsFromPID(process.Id)
+                                    Loop
+                                Next
                                 SaveFiles()
-                            Catch
+                            Catch ex As Exception
+                                Log.Log("AutoSave encurred an error while saving " & g_inventorApplication.ActiveDocument.DisplayName & vbNewLine &
+                                        ex.Message)
                             End Try
                         End If
                     End If
                 End If
-                Settings.txtLog.Clear()
                 Threading.Thread.Sleep(60000)
             Loop
         End Sub
+
         Private Sub SaveFiles()
             Dim Proj As Integer = My.Settings.Projects
             If My.Settings.KeepOlderThan = True And My.Settings.Cleanup = True Then
@@ -257,20 +271,20 @@ Namespace AutoSave
         End Sub
 
         Private Sub DirtyWork(oDoc As Inventor.Document)
-            'If oDoc.Dirty = False AndAlso customPropSet.Item("Dirty").Value = False Then
             If Not ChangeReport.Contains(oDoc.FullFileName) Then
                 Log.Log(oDoc.DisplayName & " Skipped save - No changes since last save")
                 Exit Sub
             End If
             If oDoc.DocumentType = DocumentTypeEnum.kAssemblyDocumentObject Then
-                Dim oAssDoc As AssemblyDocument = oDoc
+                Dim oAssDoc As AssemblyDocument = g_inventorApplication.ActiveDocument
                 If Not oAssDoc.ComponentDefinition.ActiveOccurrence Is Nothing Then
                     Log.Log("Skipped saving " & oAssDoc.DisplayName & vbNewLine & "Currently being edited by user.")
                     Exit Sub
                 End If
             ElseIf oDoc.DocumentType = DocumentTypeEnum.kPartDocumentObject Then
-                If Not oDoc.ActivatedObject Is Nothing Then
-                    Log.Log("Skipped saving " & oDoc.DisplayName & vbNewLine & "Currently being edited by user.")
+                Dim oPartDoc = g_inventorApplication.ActiveDocument
+                If Not oPartDoc.ActivatedObject Is Nothing Then
+                    Log.Log("Skipped saving " & oPartDoc.DisplayName & vbNewLine & "Currently being edited by user.")
                     Exit Sub
                 End If
             End If
@@ -290,7 +304,6 @@ Namespace AutoSave
                 Exit Sub
             End If
             Dim ReadCheck As New IO.FileInfo(oDoc.FullFileName)
-            Dim Read As IO.FileInfo
             If ReadCheck.IsReadOnly = False Or My.Settings.ReadOnlySave = True Then
                 Dim SaveName, Tag, Location, Directory As String
                 Try
@@ -305,9 +318,8 @@ Namespace AutoSave
                         Tag = GetTag(oDoc, IO.Path.GetDirectoryName(SaveName))
                         SaveName = SaveName.Insert(InStrRev(SaveName, "."), Tag & ".")
                         Try
-                            oDoc.PropertySets.Item("{32853F0F-3444-11D1-9E93-0060B03C1CA6}").ItemByPropId("5").Value = oDoc.DisplayName
                             oDoc.SaveAs(SaveName, True)
-                            Write_Save_Data(SaveName, oDoc.FullDocumentName)
+                            Write_Save_Data(oDoc.DisplayName, SaveName, oDoc.FullDocumentName)
                         Catch ex As Exception
                             Log.Log("Error encountered while saving " & oDoc.DisplayName & vbNewLine & ex.Message)
                         End Try
@@ -319,9 +331,8 @@ Namespace AutoSave
                         Tag = GetTag(oDoc, Location)
                         SaveName = Location & IO.Path.GetFileName(oDoc.FullFileName).Insert(InStrRev(IO.Path.GetFileName(oDoc.FullFileName), "."), Tag & ".")
                         Try
-                            oDoc.PropertySets.Item("{32853F0F-3444-11D1-9E93-0060B03C1CA6}").ItemByPropId("5").Value = oDoc.DisplayName
                             oDoc.SaveAs(SaveName, True)
-                            Write_Save_Data(SaveName, oDoc.FullDocumentName)
+                            Write_Save_Data(oDoc.DisplayName, SaveName, oDoc.FullDocumentName)
                         Catch ex As Exception
                             Log.Log("Error encountered while saving " & oDoc.DisplayName & vbNewLine & ex.Message)
                         End Try
@@ -351,7 +362,6 @@ Namespace AutoSave
                 Catch ex As Exception
                     Log.Log("Error encountered while saving: " & ex.Message)
                 Finally
-
                     g_inventorApplication.SilentOperation = False
                     SkipSave = False
                 End Try
@@ -359,13 +369,14 @@ Namespace AutoSave
             ElseIf ReadCheck.IsReadOnly = True Then
                 Log.Log(oDoc.DisplayName & " Not saved - Read only - User parameter")
             End If
-
         End Sub
-        Private Sub Write_Save_Data(ByRef SaveName As String, OldName As String)
+
+        Private Sub Write_Save_Data(ByRef DisplayName As String, ByRef SaveName As String, OldName As String)
             Dim sDoc As Document = g_inventorApplication.Documents.Open(SaveName, False)
             Dim Prop As Inventor.Property = Nothing
             Dim customPropSet As Inventor.PropertySet
             Dim Read As IO.FileInfo
+            sDoc.PropertySets.Item("{32853F0F-3444-11D1-9E93-0060B03C1CA6}").ItemByPropId("5").Value = DisplayName
             customPropSet = sDoc.PropertySets.Item("Inventor User Defined Properties")
             Try
                 Prop = customPropSet.Add(OldName, "Original")
@@ -383,7 +394,6 @@ Namespace AutoSave
                 sDoc.Close()
             End Try
         End Sub
-
         Private Sub Cleanup(oDoc As Document)
             Dim Location, Savename As String
             If My.Settings.UseDocumentLocation = True Then
@@ -447,9 +457,7 @@ Namespace AutoSave
                 Cleanup(DocumentObject)
             End If
         End Sub
-
         Private Sub m_AppEvents_OnOpenDocument(DocumentObject As _Document, FullDocumentName As String, BeforeOrAfter As EventTimingEnum, Context As NameValueMap, ByRef HandlingCode As HandlingCodeEnum) Handles m_AppEvents.OnOpenDocument
-
             Dim OpenVersion As New Open_Version
             If BeforeOrAfter = EventTimingEnum.kAfter Then
                 Dim oDoc As Document = g_inventorApplication.ActiveDocument
@@ -482,7 +490,6 @@ Namespace AutoSave
                 End If
             End If
         End Sub
-
         Private Sub m_UIEvents2_OnActivateCommand(CommandName As String, Context As NameValueMap) Handles m_UIEvents2.OnActivateCommand
             IsIdle = False
         End Sub
@@ -632,6 +639,66 @@ Public Module Globals
             Return OleCreatePictureIndirect(pictBmp, iPictureDispGuid, True)
         End Function
     End Class
-#End Region
 
+#End Region
+    Public Class Test
+
+        <DllImport("USER32.DLL")>
+        Private Shared Function GetShellWindow() As IntPtr
+        End Function
+
+        <DllImport("USER32.DLL")>
+        Private Shared Function GetWindowText(ByVal hWnd As IntPtr, ByVal lpString As StringBuilder, ByVal nMaxCount As Integer) As Integer
+        End Function
+
+        <DllImport("USER32.DLL")>
+        Private Shared Function GetWindowTextLength(ByVal hWnd As IntPtr) As Integer
+        End Function
+
+        <DllImport("user32.dll", SetLastError:=True)>
+        Private Shared Function GetWindowThreadProcessId(ByVal hWnd As IntPtr, <Out()> ByRef lpdwProcessId As UInt32) As UInt32
+        End Function
+
+        <DllImport("USER32.DLL")>
+        Private Shared Function IsWindowVisible(ByVal hWnd As IntPtr) As Boolean
+        End Function
+
+        Private Delegate Function EnumWindowsProc(ByVal hWnd As IntPtr, ByVal lParam As Integer) As Boolean
+
+        <DllImport("USER32.DLL")>
+        Private Shared Function EnumWindows(ByVal enumFunc As EnumWindowsProc, ByVal lParam As Integer) As Boolean
+        End Function
+
+        Private hShellWindow As IntPtr = GetShellWindow()
+        Private dictWindows As New Dictionary(Of IntPtr, String)
+        Private currentProcessID As Integer
+
+        Public Function GetOpenWindowsFromPID(ByVal processID As Integer) As IDictionary(Of IntPtr, String)
+            dictWindows.Clear()
+            currentProcessID = processID
+            EnumWindows(AddressOf enumWindowsInternal, 0)
+            Return dictWindows
+        End Function
+
+        Private Function enumWindowsInternal(ByVal hWnd As IntPtr, ByVal lParam As Integer) As Boolean
+            If (hWnd <> hShellWindow) Then
+                Dim windowPid As UInt32
+                If Not IsWindowVisible(hWnd) Then
+                    Return True
+                End If
+                Dim length As Integer = GetWindowTextLength(hWnd)
+                If (length = 0) Then
+                    Return True
+                End If
+                GetWindowThreadProcessId(hWnd, windowPid)
+                If (windowPid <> currentProcessID) Then
+                    Return True
+                End If
+                Dim stringBuilder As New StringBuilder(length)
+                GetWindowText(hWnd, stringBuilder, (length + 1))
+                dictWindows.Add(hWnd, stringBuilder.ToString)
+            End If
+            Return True
+        End Function
+    End Class
 End Module
