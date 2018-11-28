@@ -33,7 +33,6 @@ Namespace AutoSave
         Dim LicenseError As String = ""
 
 #Region "ApplicationAddInServer Members"
-
         ' This method is called by Inventor when it loads the AddIn. The AddInSiteObject provides access  
         ' to the Inventor Application object. The FirstTime flag indicates if the AddIn is loaded for
         ' the first time. However, with the introduction of the ribbon this argument is always true.
