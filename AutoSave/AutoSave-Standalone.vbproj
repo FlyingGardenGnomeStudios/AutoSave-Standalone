@@ -215,7 +215,7 @@
     </PreBuildEvent>
     <PostBuildEvent>call "%25VS140COMNTOOLS%25vsvars32"
 		mt.exe -manifest "$(ProjectDir)AutoSave.X.manifest" -outputresource:"$(TargetPath)";#2
-		XCopy "$(Targetdir)AutoSave-STANDALONE.dll" "%25AppData%25\Autodesk\ApplicationPlugins\$(TargetName)\" /Y /R
+		XCopy "$(Targetdir)AutoSave-Standalone.dll" "%25AppData%25\Autodesk\ApplicationPlugins\$(TargetName)\" /Y /R
                            	XCopy "$(Targetdir)RestSharp.dll" "%25AppData%25\Autodesk\ApplicationPlugins\$(TargetName)\" /Y /R
 		XCopy "$(ProjectDir)Autodesk.AutoSaveSA.Inventor.addin" "%25AppData%25\Autodesk\ApplicationPlugins\$(TargetName)\" /Y /R
 	</PostBuildEvent>
