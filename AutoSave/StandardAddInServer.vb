@@ -39,6 +39,12 @@ Namespace AutoSave
         ' the first time. However, with the introduction of the ribbon this argument is always true.
         Public Sub Activate(ByVal addInSiteObject As Inventor.ApplicationAddInSite, ByVal firstTime As Boolean) Implements Inventor.ApplicationAddInServer.Activate
             ' Initialize AddIn members.
+            If IsFile(IO.Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData), "Autodesk\ApplicationPlugins"), "AutoSave-Standalone.dll") = True Then
+                MsgBox("It appears as though the standalone version of Autosave is installed" & vbNewLine &
+                       "In order to stop save conflicts, please uninstal one of the AutoSave versions." & vbNewLine &
+                       "The subscription version will not be loaded.")
+                Exit Sub
+            End If
             g_inventorApplication = addInSiteObject.Application
             ' Connect to the user-interface events to handle a ribbon reset.
             m_uiEvents = g_inventorApplication.UserInterfaceManager.UserInterfaceEvents
@@ -54,7 +60,12 @@ Namespace AutoSave
                 AddToUserInterface()
             End If
         End Sub
-
+        Function IsFile(ByVal DName As String, ByVal FName As String) As Boolean
+            For Each foundFile As String In My.Computer.FileSystem.GetFiles(DName, FileIO.SearchOption.SearchAllSubDirectories, FName)
+                Return True
+                Exit Function
+            Next
+        End Function
         ' This method is called by Inventor when the AddIn is unloaded. The AddIn will be
         ' unloaded either manually by the user or when the Inventor session is terminated.
         Public Sub Deactivate() Implements Inventor.ApplicationAddInServer.Deactivate
