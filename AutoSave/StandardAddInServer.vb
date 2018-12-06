@@ -38,12 +38,11 @@ Namespace AutoSave
         ' the first time. However, with the introduction of the ribbon this argument is always true.
         Public Sub Activate(ByVal addInSiteObject As Inventor.ApplicationAddInSite, ByVal firstTime As Boolean) Implements Inventor.ApplicationAddInServer.Activate
             ' Initialize AddIn members.
-
             If IsFile(IO.Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData), "Autodesk\ApplicationPlugins"), "AutoSave.dll") = True Then
                 'If IO.File.Exists(IO.Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData), "Autodesk\ApplicationPlugins\FlyingGarden_AutoSave.bundle\Contents\AutoSave.dll")) Then
                 MsgBox("It appears as though the subscription version of Autosave is installed" & vbNewLine &
                        "In order to stop save conflicts, please uninstal one of the AutoSave versions." & vbNewLine &
-                       "The standalone version will not be loaded.")
+                       "The perpetual version will not be loaded.")
                 Exit Sub
             End If
             g_inventorApplication = addInSiteObject.Application
