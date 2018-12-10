@@ -9,7 +9,6 @@ Imports System.Text
 Imports RestSharp
 Imports System.Net
 Imports RestSharp.Deserializers
-Imports Scripting
 Imports System.Runtime.InteropServices
 
 Namespace AutoSave
@@ -31,7 +30,6 @@ Namespace AutoSave
         Public ReportLog As String
         Dim Fail As Boolean = True
         Dim LicenseError As String = ""
-
 #Region "ApplicationAddInServer Members"
         ' This method is called by Inventor when it loads the AddIn. The AddInSiteObject provides access  
         ' to the Inventor Application object. The FirstTime flag indicates if the AddIn is loaded for
@@ -186,7 +184,6 @@ Namespace AutoSave
             Return isValid
         End Function
 #End Region
-        Private fso As New FileSystemObject
 
 #Region "User interface definition"
         ' Sub where the user-interface creation is done.  This is called when
