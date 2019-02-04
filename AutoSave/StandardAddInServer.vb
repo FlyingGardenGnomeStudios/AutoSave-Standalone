@@ -37,8 +37,7 @@ Namespace AutoSave
         ' the first time. However, with the introduction of the ribbon this argument is always true.
         Public Sub Activate(ByVal addInSiteObject As Inventor.ApplicationAddInSite, ByVal firstTime As Boolean) Implements Inventor.ApplicationAddInServer.Activate
             ' Initialize AddIn members.
-            If IsFile(IO.Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData), "Autodesk\ApplicationPlugins"), "AutoSave-Standalone.dll") = True Then
-                'If IO.File.Exists(IO.Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData), "Autodesk\ApplicationPlugins\FlyingGarden_AutoSave.bundle\Contents\AutoSave.dll")) Then
+            If IsFile(IO.Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData), "Autodesk\ApplicationPlugins"), "AutoSave.dll") = True Then
                 MsgBox("It appears as though the perpetual version of Autosave is installed" & vbNewLine &
                        "In order to stop save conflicts, please uninstal one of the AutoSave versions." & vbNewLine &
                        "The subscription version will not be loaded.")
@@ -92,7 +91,6 @@ Namespace AutoSave
                 Return Nothing
             End Get
         End Property
-
         ' Note:this method is now obsolete, you should use the 
         ' ControlDefinition functionality for implementing commands.
         Public Sub ExecuteCommand(ByVal commandID As Integer) Implements Inventor.ApplicationAddInServer.ExecuteCommand
@@ -272,6 +270,7 @@ Namespace AutoSave
                         DirtyWork(g_inventorApplication.ActiveDocument, InEdit)
                     Case 1
                         For Each Document As Document In g_inventorApplication.Documents.VisibleDocuments
+                            Debug.WriteLine(Document.DocumentType)
                             DirtyWork(Document, InEdit)
                         Next
                     Case 2
@@ -341,7 +340,7 @@ runSave:
                 End If
             Catch ex As Exception
                 Log.Log("Autosave encountered an error while trying to save " & oDoc.DisplayName & vbNewLine &
-                    "Could not determine the document type" & vbNewLine & ex.Message)
+                    "Could not determine the document type")
                 Exit Sub
             End Try
             If oDoc.FullFileName = "" Then
