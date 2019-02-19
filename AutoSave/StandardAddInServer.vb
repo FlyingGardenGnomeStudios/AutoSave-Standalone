@@ -39,9 +39,8 @@ Namespace AutoSave
             ' Initialize AddIn members.
             If IsFile(IO.Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData), "Autodesk\ApplicationPlugins"), "AutoSave.dll") = True Then
                 MsgBox("It appears as though the perpetual version of Autosave is installed" & vbNewLine &
-                       "In order to stop save conflicts, please uninstal one of the AutoSave versions." & vbNewLine &
-                       "The subscription version will not be loaded.")
-                Exit Sub
+                       "In order to stop save conflicts, please uninstal one of the AutoSave versions and re-install the desired version")
+                ' Exit Sub
             End If
             g_inventorApplication = addInSiteObject.Application
             ' Connect to the user-interface events to handle a ribbon reset.
@@ -51,7 +50,7 @@ Namespace AutoSave
             Dim smallIcon As stdole.IPictureDisp = PictureDispConverter.ToIPictureDisp(My.Resources.AutoSave_16)
             Dim controlDefs As Inventor.ControlDefinitions = g_inventorApplication.CommandManager.ControlDefinitions
             ' ActivationCheck()
-            m_AutoSaveSAButton = controlDefs.AddButtonDefinition("Settings", "UIAutoSave", CommandTypesEnum.kShapeEditCmdType, AddInClientID,, "Change options for AutoSave", smallIcon, largeIcon, ButtonDisplayEnum.kDisplayTextInLearningMode)
+            m_AutoSaveSAButton = controlDefs.AddButtonDefinition("Settings", "UISAAutoSave", CommandTypesEnum.kShapeEditCmdType, AddInClientID,, "Change options for AutoSave", smallIcon, largeIcon, ButtonDisplayEnum.kDisplayTextInLearningMode)
             m_AppEvents = g_inventorApplication.ApplicationEvents
             ' Add to the user interface, if it's the first time.
             If firstTime Then
